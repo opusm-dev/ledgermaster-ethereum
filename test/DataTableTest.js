@@ -23,6 +23,11 @@ contract('DataTable', (accounts) => {
     return createTable(tableName, keyColumnName).then(t => table = t);
   });
 
+  it('get row', async() => {
+    return table.addRow({names: [keyColumnName], values: ['0x176b615d4e826429504a18d6eb8a2eaba86e5de7']})
+      .then(() => table.getRow('0x176b615d4e826429504a18d6eb8a2eaba86e5de7').then((it) => expect(it[2]).to.equal(true)));
+  });
+
   it('test add / remove / update / findBy', async() => {
     const columnNames = Array(N_COLUMN).fill().map(() => nameGen());
     const indices = columnNames
