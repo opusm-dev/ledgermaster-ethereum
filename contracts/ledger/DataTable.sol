@@ -8,24 +8,26 @@ import "../proxy/Modules.sol";
 
 import "../Index.sol";
 import "../Table.sol";
+import "../Constraint.sol";
 
 contract DataTable is Table, Controller, Modules {
+  /* General operations */
+  string private constant ERR_ILLEGAL = "ILLEGAL_STATE";
+  string private constant ERR_ALREADY_EXIST = "ALREADY_EXIST";
+  string private constant ERR_NO_DATA = "NO_DATA";
+  string private constant ERR_DUPLICATED = "DATA_DUPLICATED";
+
   /* Table status related error */
   string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
 
   /* Column-related error */
-  string private constant ERR_COLUMN_NAME_DUPLICATED = "CTR_COLUMN_NAME_DUPLICATED";
-  string private constant ERR_NO_COLUMN = "CTR_NO_COLUMN";
 
   /* Index-related error */
-  string private constant ERR_INDEX_NAME_DUPLICATED = "CTR_INDEX_NAME_DUPLICATED";
   string private constant ERR_INDEXED_COLUMN = "CTR_INDEXED_COLUMN";
-  string private constant ERR_NO_INDEX = "CTR_NO_INDEX";
 
   /* Row-related error */
   string private constant ERR_KEY_VALUE_SIZE = "KEY_VALUE_SIZE_NOT_MATCHED";
-  string private constant ERR_ROW_NOT_FOUND = "ROW_NOT_FOUND";
-  string private constant ERR_ALREADY_EXIST = "ROW_ALREADY_EXIST";
+  string private constant ERR_CONSTRAINTS = "CONSTRAINT_VIOLATION";
 
 
   int constant ST_CREATED = -1;
@@ -38,6 +40,7 @@ contract DataTable is Table, Controller, Modules {
   table.Column[] Columns;
   table.Index[] Indices;
   mapping(string => table.Row) private Rows;
+  Constraint[] Constraints;
 
   modifier statusAvailable {
     require(status == ST_AVAILABLE, ERR_ST_AVAILABLE);
@@ -72,6 +75,36 @@ contract DataTable is Table, Controller, Modules {
     });
   }
 
+  /*********************************/
+  /* Constraint-related governance */
+  /*********************************/
+  function addConstraint(address addrezz) public {
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    for (uint i = 0 ; i < Constraints.length ; ++i) {
+      require(address(Constraints[i]) != addrezz, ERR_ALREADY_EXIST);
+    }
+    Constraints.push(Constraint(addrezz));
+  }
+
+  function removeConstraint(address addrezz) public {
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    uint deletionCount = 0;
+    uint beforeColumns = Constraints.length;
+    for (uint i = 0 ; i<Indices.length ; ++i ) {
+      uint index = uint(i - deletionCount);
+      if (address(Constraints[index]) == addrezz) {
+        Constraints[index] = Constraints[Indices.length - 1];
+        Indices.pop();
+        ++deletionCount;
+        --i;
+      }
+    }
+    // Check if column deleted
+    require(1 == deletionCount, ERR_NO_DATA);
+    // Check if column size decreased
+    require(beforeColumns - deletionCount == Constraints.length, ERR_ILLEGAL);
+  }
+
   /*****************************/
   /* Column-related governance */
   /*****************************/
@@ -80,7 +113,7 @@ contract DataTable is Table, Controller, Modules {
     require(table.validateColumn(_name, _type), "Column is not valid");
     for (uint i = 0 ; i<Columns.length ; ++i) {
       // Check column name duplication
-      require(utils.notEquals(Columns[i].columnName, _name), ERR_COLUMN_NAME_DUPLICATED);
+      require(utils.notEquals(Columns[i].columnName, _name), ERR_DUPLICATED);
     }
     table.Column memory column = table.Column({
       columnName: _name,
@@ -98,7 +131,7 @@ contract DataTable is Table, Controller, Modules {
     for (uint i = 0 ; i<Indices.length ; ++i ) {
       require(utils.notEquals(Indices[i].columnName, _name), ERR_INDEXED_COLUMN);
     }
-    for (uint i=0 ; i<Columns.length ; ++i) {
+    for (uint i = 0 ; i < Columns.length ; ++i) {
       uint index = uint(i - deletionCount);
       if (utils.equals(Columns[index].columnName, _name)) {
         Columns[index] = Columns[Columns.length - 1];
@@ -108,9 +141,9 @@ contract DataTable is Table, Controller, Modules {
       }
     }
     // Check if column deleted
-    require(1 == deletionCount, ERR_NO_COLUMN);
+    require(1 == deletionCount, ERR_NO_DATA);
     // Check if column size decreased
-    require(beforeColumns - deletionCount == Columns.length, "Illegal State");
+    require(beforeColumns - deletionCount == Columns.length, ERR_ILLEGAL);
   }
 
   /****************************/
@@ -121,7 +154,7 @@ contract DataTable is Table, Controller, Modules {
     // Add index
     for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication
-      require(utils.notEquals(Indices[i].indexName, _name), ERR_INDEX_NAME_DUPLICATED);
+      require(utils.notEquals(Indices[i].indexName, _name), ERR_DUPLICATED);
       // Check column duplication
       require(utils.notEquals(Indices[i].columnName, _column), ERR_INDEXED_COLUMN);
     }
@@ -145,9 +178,9 @@ contract DataTable is Table, Controller, Modules {
       }
     }
     // Check if index deleted
-    require(1 == deletionCount, ERR_NO_INDEX);
+    require(1 == deletionCount, ERR_NO_DATA);
     // Check if index size decreased
-    require(beforeIndices - deletionCount == Columns.length, "Illegal State");
+    require(beforeIndices - deletionCount == Columns.length, ERR_ILLEGAL);
   }
 
   /**
@@ -187,6 +220,9 @@ contract DataTable is Table, Controller, Modules {
     string memory key = getColumnValue(row, keyColumn);
     require(row.names.length == row.values.length, ERR_KEY_VALUE_SIZE);
     require(!getRow(key).available, ERR_ALREADY_EXIST);
+    for (uint i = 0 ; i < Constraints.length ; ++i) {
+      require(Constraints[i].checkInsert(msg.sender, row), ERR_CONSTRAINTS);
+    }
     Rows[key] = table.Row({
       names: row.names,
       values: row.values,
@@ -198,7 +234,10 @@ contract DataTable is Table, Controller, Modules {
   function removeRow(string memory key) public statusAvailable {
     // Check if it exists
     table.Row memory row = Rows[key];
-    require(row.available, ERR_ROW_NOT_FOUND);
+    require(row.available, ERR_NO_DATA);
+    for (uint i = 0 ; i < Constraints.length ; ++i) {
+      require(Constraints[i].checkDelete(msg.sender, row), ERR_CONSTRAINTS);
+    }
     removeIndexFor(row);
     delete Rows[key];
   }
@@ -207,7 +246,10 @@ contract DataTable is Table, Controller, Modules {
     require(newRow.names.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = getColumnValue(newRow, keyColumn);
     table.Row memory oldRow = Rows[key];
-    require(oldRow.available, ERR_ROW_NOT_FOUND);
+    require(oldRow.available, ERR_NO_DATA);
+    for (uint i = 0 ; i < Constraints.length ; ++i) {
+      require(Constraints[i].checkUpdate(msg.sender, oldRow, newRow), ERR_CONSTRAINTS);
+    }
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       string memory columnName = Indices[i].columnName;
@@ -233,11 +275,11 @@ contract DataTable is Table, Controller, Modules {
   function getRows(string[] memory keys, bool reverse) private view statusAvailable returns (table.Row[] memory) {
     table.Row[] memory r = new table.Row[](keys.length);
     if (reverse) {
-      for (uint i=0 ; i<keys.length ; ++i) {
+      for (uint i = 0 ; i < keys.length ; ++i) {
         r[i] = getRow(keys[keys.length - i - 1]);
       }
     } else {
-      for (uint i=0 ; i<keys.length ; ++i) {
+      for (uint i = 0 ; i < keys.length ; ++i) {
         r[i] = getRow(keys[i]);
       }
     }
@@ -250,9 +292,11 @@ contract DataTable is Table, Controller, Modules {
    * 0 : 정렬 없음
    * 1 : 오름차순 정렬
    */
-  function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType) public view statusAvailable returns (table.Row[] memory) {
+  function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType)
+  public view statusAvailable
+  returns (table.Row[] memory) {
     // Check if column have index
-    for (uint i=0 ; i< Indices.length ; ++i) {
+    for (uint i = 0 ; i < Indices.length ; ++i) {
       if (utils.equals(Indices[i].columnName, _column)) {
         // If index exists for column
         Index index = Index(Indices[i].addrezz);
@@ -265,7 +309,7 @@ contract DataTable is Table, Controller, Modules {
     }
 
     // If no index for column
-    for (uint i=0 ; i< Indices.length ; ++i) {
+    for (uint i = 0 ; i < Indices.length ; ++i) {
       if (utils.equals(Indices[i].columnName, keyColumn)) {
         Index index = Index(Indices[i].addrezz);
         table.Row[] memory allRows = getRows(index.findBy('', -1, '', -1), false);
@@ -284,10 +328,12 @@ contract DataTable is Table, Controller, Modules {
     return getRows(new string[](0), false);
   }
 
-  function filter(table.Row[] memory _list, string memory _column, string memory _start, int _st, string memory _end, int _et) private pure returns (table.Row[] memory) {
+  function filter(table.Row[] memory _list, string memory _column, string memory _start, int _st, string memory _end, int _et)
+  private pure
+  returns (table.Row[] memory) {
     uint n = 0;
     bool[] memory accepts = new bool[](_list.length);
-    for (uint i=0 ; i<_list.length ; ++i) {
+    for (uint i = 0 ; i<_list.length ; ++i) {
       string memory value = getColumnValue(_list[i], _column);
       if (utils.checkBound(_start, _st, _end, _et, value)) {
         accepts[i] = true;
@@ -298,7 +344,7 @@ contract DataTable is Table, Controller, Modules {
     }
     table.Row[] memory filtered = new table.Row[](n);
     uint targetIndex = 0;
-    for (uint sourceIndex=0 ; sourceIndex<_list.length ; ++sourceIndex) {
+    for (uint sourceIndex = 0 ; sourceIndex < _list.length ; ++sourceIndex) {
       if (accepts[sourceIndex]) {
         filtered[targetIndex++] = _list[sourceIndex];
       }
@@ -336,7 +382,7 @@ contract DataTable is Table, Controller, Modules {
   function reverse(table.Row[] memory _list) private pure returns (table.Row[] memory) {
     uint middlePoint = _list.length / 2;
     table.Row memory temp;
-    for (uint i=0 ; i<middlePoint ; ++i) {
+    for (uint i = 0 ; i < middlePoint ; ++i) {
       temp = _list[i];
       _list[i] = _list[_list.length - i - 1];
       _list[_list.length - i - 1] = temp;
@@ -346,7 +392,7 @@ contract DataTable is Table, Controller, Modules {
 
   /* Library */
   function getColumnValue(table.Row memory row, string memory columnName) internal pure returns (string memory) {
-    for (uint i=0 ; i<row.names.length ; ++i) {
+    for (uint i = 0 ; i < row.names.length ; ++i) {
       if (utils.equals(row.names[i], columnName)) {
         return row.values[i];
       }
