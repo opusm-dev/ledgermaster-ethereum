@@ -10,6 +10,9 @@ import "../Index.sol";
 import "../Table.sol";
 
 contract DataTable is Table, Controller, Modules {
+  /* Table status related error */
+  string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
+
   /* Column-related error */
   string private constant ERR_COLUMN_NAME_DUPLICATED = "CTR_COLUMN_NAME_DUPLICATED";
   string private constant ERR_NO_COLUMN = "CTR_NO_COLUMN";
@@ -18,6 +21,12 @@ contract DataTable is Table, Controller, Modules {
   string private constant ERR_INDEX_NAME_DUPLICATED = "CTR_INDEX_NAME_DUPLICATED";
   string private constant ERR_INDEXED_COLUMN = "CTR_INDEXED_COLUMN";
   string private constant ERR_NO_INDEX = "CTR_NO_INDEX";
+
+  /* Row-related error */
+  string private constant ERR_KEY_VALUE_SIZE = "KEY_VALUE_SIZE_NOT_MATCHED";
+  string private constant ERR_ROW_NOT_FOUND = "ROW_NOT_FOUND";
+  string private constant ERR_ALREADY_EXIST = "ROW_ALREADY_EXIST";
+
 
   int constant ST_CREATED = -1;
   int constant ST_AVAILABLE = 0;
@@ -28,11 +37,16 @@ contract DataTable is Table, Controller, Modules {
   string keyColumn;
   table.Column[] Columns;
   table.Index[] Indices;
-  mapping(string => table.Row) private rows;
+  mapping(string => table.Row) private Rows;
+
+  modifier statusAvailable {
+    require(status == ST_AVAILABLE, ERR_ST_AVAILABLE);
+    _;
+  }
 
   function initialize(string memory _name, string memory _keyColumn, int _keyColumnType)
   public override {
-    require(status == ST_CREATED);
+    require(status == ST_CREATED, "Already initialized");
     status = ST_INITIALIZING;
     name = _name;
     keyColumn = _keyColumn;
@@ -62,8 +76,8 @@ contract DataTable is Table, Controller, Modules {
   /* Column-related governance */
   /*****************************/
   function addColumn(string memory _name, int _type) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING);
-    require(table.validateColumn(_name, _type));
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    require(table.validateColumn(_name, _type), "Column is not valid");
     for (uint i = 0 ; i<Columns.length ; ++i) {
       // Check column name duplication
       require(utils.notEquals(Columns[i].columnName, _name), ERR_COLUMN_NAME_DUPLICATED);
@@ -75,14 +89,13 @@ contract DataTable is Table, Controller, Modules {
     Columns.push(column);
   }
 
-  function removeColumn(string memory _name) public {
-    require(status == ST_AVAILABLE);
+  function removeColumn(string memory _name) public statusAvailable {
     uint deletionCount = 0;
     uint beforeColumns = Columns.length;
     // 키 칼럼은 삭제할 수 없다.
-    require(utils.notEquals(keyColumn, _name));
+    require(utils.notEquals(keyColumn, _name), "Should not remove key column");
     // 인덱스가 있으면 삭제할 수 없다.
-    for (uint i = 0 ; i< Indices.length ; ++i ) {
+    for (uint i = 0 ; i<Indices.length ; ++i ) {
       require(utils.notEquals(Indices[i].columnName, _name), ERR_INDEXED_COLUMN);
     }
     for (uint i=0 ; i<Columns.length ; ++i) {
@@ -97,18 +110,16 @@ contract DataTable is Table, Controller, Modules {
     // Check if column deleted
     require(1 == deletionCount, ERR_NO_COLUMN);
     // Check if column size decreased
-    require(beforeColumns - deletionCount == Columns.length);
+    require(beforeColumns - deletionCount == Columns.length, "Illegal State");
   }
-
-  event XXX();
 
   /****************************/
   /* Index-related governance */
   /****************************/
   function addIndex(string memory _name, string memory _column) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING);
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
     // Add index
-    for (uint i = 0 ; i< Indices.length ; ++i) {
+    for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication
       require(utils.notEquals(Indices[i].indexName, _name), ERR_INDEX_NAME_DUPLICATED);
       // Check column duplication
@@ -119,13 +130,12 @@ contract DataTable is Table, Controller, Modules {
     Indices.push(table.Index({ indexName: _name, columnName: _column, addrezz: indexAddress }));
   }
 
-  function removeIndex(string memory _name) public {
-    require(status == ST_AVAILABLE);
+  function removeIndex(string memory _name) public statusAvailable {
     // Drop index
     uint deletionCount = 0;
     uint beforeIndices = Indices.length;
-    require(utils.notEquals(_name, name));
-    for (uint i = 0 ; i< Indices.length ; ++i ) {
+    require(utils.notEquals(_name, name), "Should not remove key index");
+    for (uint i = 0 ; i<Indices.length ; ++i ) {
       uint index = uint(i - deletionCount);
       if (utils.equals(Indices[index].indexName, _name)) {
         Indices[index] = Indices[Indices.length - 1];
@@ -137,11 +147,13 @@ contract DataTable is Table, Controller, Modules {
     // Check if index deleted
     require(1 == deletionCount, ERR_NO_INDEX);
     // Check if index size decreased
-    require(beforeIndices - deletionCount == Indices.length);
+    require(beforeIndices - deletionCount == Columns.length, "Illegal State");
   }
 
+  /**
+   * Status 확인은 public에서 미리 확인하도록 함
+   */
   function addIndexFor(table.Row memory row) private {
-    require(status == ST_AVAILABLE);
     // Row key
     string memory key = getColumnValue(row, keyColumn);
     // iterate indices
@@ -153,8 +165,10 @@ contract DataTable is Table, Controller, Modules {
     }
   }
 
+  /**
+   * Status 확인은 public에서 미리 확인하도록 함
+   */
   function removeIndexFor(table.Row memory row) private {
-    require(status == ST_AVAILABLE);
     // Row key
     string memory key = getColumnValue(row, keyColumn);
     // iterate indices
@@ -169,11 +183,11 @@ contract DataTable is Table, Controller, Modules {
   /**************************/
   /* Row-related governance */
   /**************************/
-  function addRow(table.Row memory row) public {
-    require(status == ST_AVAILABLE);
+  function addRow(table.Row memory row) public statusAvailable {
     string memory key = getColumnValue(row, keyColumn);
-    require(row.names.length == row.values.length);
-    rows[key] = table.Row({
+    require(row.names.length == row.values.length, ERR_KEY_VALUE_SIZE);
+    require(!getRow(key).available, ERR_ALREADY_EXIST);
+    Rows[key] = table.Row({
       names: row.names,
       values: row.values,
       available: true
@@ -181,21 +195,19 @@ contract DataTable is Table, Controller, Modules {
     addIndexFor(row);
   }
 
-  function removeRow(string memory key) public {
-    require(status == ST_AVAILABLE);
+  function removeRow(string memory key) public statusAvailable {
     // Check if it exists
-    table.Row memory row = rows[key];
-    require(row.available);
+    table.Row memory row = Rows[key];
+    require(row.available, ERR_ROW_NOT_FOUND);
     removeIndexFor(row);
-    delete rows[key];
+    delete Rows[key];
   }
 
-  function updateRow(table.Row memory newRow) public {
-    require(status == ST_AVAILABLE);
-    require(newRow.names.length == newRow.values.length);
+  function updateRow(table.Row memory newRow) public statusAvailable {
+    require(newRow.names.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = getColumnValue(newRow, keyColumn);
-    table.Row memory oldRow = rows[key];
-    require(oldRow.available);
+    table.Row memory oldRow = Rows[key];
+    require(oldRow.available, ERR_ROW_NOT_FOUND);
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       string memory columnName = Indices[i].columnName;
@@ -207,20 +219,18 @@ contract DataTable is Table, Controller, Modules {
         index.add(newColumn, key);
       }
     }
-    rows[key] = table.Row({
+    Rows[key] = table.Row({
       names: newRow.names,
       values: newRow.values,
       available: true
     });
   }
 
-  function getRow(string memory key) public view returns (table.Row memory) {
-    require(status == ST_AVAILABLE);
-    return rows[key];
+  function getRow(string memory key) public view statusAvailable returns (table.Row memory) {
+    return Rows[key];
   }
 
-  function getRows(string[] memory keys, bool reverse) private view returns (table.Row[] memory) {
-    require(status == ST_AVAILABLE);
+  function getRows(string[] memory keys, bool reverse) private view statusAvailable returns (table.Row[] memory) {
     table.Row[] memory r = new table.Row[](keys.length);
     if (reverse) {
       for (uint i=0 ; i<keys.length ; ++i) {
@@ -240,8 +250,7 @@ contract DataTable is Table, Controller, Modules {
    * 0 : 정렬 없음
    * 1 : 오름차순 정렬
    */
-  function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType) public view returns (table.Row[] memory) {
-    require(status == ST_AVAILABLE, "Status must be ST_AVAILABLE");
+  function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType) public view statusAvailable returns (table.Row[] memory) {
     // Check if column have index
     for (uint i=0 ; i< Indices.length ; ++i) {
       if (utils.equals(Indices[i].columnName, _column)) {

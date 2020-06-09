@@ -19,9 +19,8 @@ contract Controller is Controlled {
     ContractFactory factory = ContractFactory(modules[_id]);
     factory.create(key);
     address newModule = factory.get(key);
-    if (address(0x0) != newModule) {
-      Controlled(newModule).changeOwner(msg.sender);
-    }
+    require(address(0x0) != newModule, ERR_MODULE_CREATION_FAILURE);
+    Controlled(newModule).changeOwner(msg.sender);
     return newModule;
   }
 
