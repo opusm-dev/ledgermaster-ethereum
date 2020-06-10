@@ -4,6 +4,7 @@ const logger = require('./logger.js');
 const modules = require('./modules.js');
 
 const DataTable = artifacts.require('DataTable');
+const SimpleRowRepository = artifacts.require('SimpleRowRepository');
 const SimpleNodeRepositoryFactory = artifacts.require('SimpleNodeRepositoryFactory');
 const AvlTree = artifacts.require('AvlTree');
 const SimpleNodeRepository = artifacts.require('SimpleNodeRepository');
@@ -249,6 +250,7 @@ module.exports = {
     let table;
     return Promise.all([
       DataTable.new(),
+      SimpleRowRepositoryFactory.new(),
       SimpleNodeRepositoryFactory.new(),
       MinimumFinder.deployed(),
       NodeFinder.deployed(),
@@ -257,14 +259,16 @@ module.exports = {
       AvlTreeNodeManager.deployed()])
       .then((values) => {
         const table = values[0];
-        const repositoryFactory = values[1];
-        const minFinder = values[2];
-        const nodeFinder = values[3];
-        const balancer = values[4];
-        const visitor = values[5];
-        const manager = values[6];
+        const rowRepository = values[1]
+        const repositoryFactory = values[2];
+        const minFinder = values[3];
+        const nodeFinder = values[4];
+        const balancer = values[5];
+        const visitor = values[6];
+        const manager = values[7];
 
         return table.setModule(modules.NODE_REPOSITORY_FACTORY, repositoryFactory.address)
+        .then(() => table.setModule(modules.ROW_REPOSITORY, rowRepository.address))
         .then(() => table.setModule(modules.MIN_FINDER, minFinder.address))
         .then(() => table.setModule(modules.NODE_FINDER, nodeFinder.address))
         .then(() => table.setModule(modules.BALANCER, balancer.address))

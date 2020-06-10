@@ -80,9 +80,9 @@ contract AvlTreeBalancer is Balancer {
     if (tree.isAvailable(_node)) {
       if (tree.hasRight(_node)) {
         tree.Node memory pivot = repository.get(_node.right);
-        _node = tree.linkRight(_node, pivot.left);
-        pivot = tree.linkLeft(pivot, _node.key);
-        repository.set(_node);
+        tree.Node memory right = tree.linkRight(_node, pivot.left);
+        pivot = tree.linkLeft(pivot, right.key);
+        repository.set(right);
         repository.set(pivot);
         return pivot;
       } else {
@@ -97,10 +97,10 @@ contract AvlTreeBalancer is Balancer {
     if (tree.isAvailable(_node)) {
       if (tree.hasLeft(_node)) {
         tree.Node memory pivot = repository.get(_node.left);
-        _node = tree.linkLeft(_node, pivot.right);
-        pivot = tree.linkRight(pivot, _node.key);
+        tree.Node memory left = tree.linkLeft(_node, pivot.right);
+        pivot = tree.linkRight(pivot, left.key);
         repository.set(pivot);
-        repository.set(_node);
+        repository.set(left);
         return pivot;
       } else {
         return DUMMY_NODE;

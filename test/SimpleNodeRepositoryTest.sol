@@ -2,7 +2,7 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 import "truffle/Assert.sol";
-import "../contracts/tree/SimpleNodeRepository.sol";
+import "../contracts/repository/SimpleNodeRepository.sol";
 
 contract SimpleNodeRepositoryTest {
   function testSetGet() public {

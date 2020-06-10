@@ -56,7 +56,7 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
   }
 
   function remove(string memory _key) public override {
-    delete nodes[_key] ;
+    delete nodes[_key];
     emit NodeRemoved(_key);
   }
 
@@ -106,12 +106,12 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
   }
 
   function contains(string memory _key, string memory _value)
-    public view override
-    returns (bool) {
+  public view override
+  returns (bool) {
     tree.Node memory node = get(_key);
     if (tree.isAvailable(node)) {
       if (utils.equals(node.key, _key)) {
-        for (uint i=0 ; i<node.values.length ; i++) {
+        for (uint i = 0 ; i < node.values.length ; ++i) {
           if (utils.equals(node.values[i], _value)) {
             return true;
           }
@@ -139,8 +139,8 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
   }
 
   function find(uint _finder, string memory _key)
-    public view override
-    returns (tree.Node[] memory) {
+  public view override
+  returns (tree.Node[] memory) {
     return PathFinder(getModule(_finder)).find(this, _key);
   }
 
@@ -152,8 +152,8 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
 
 
   function details(tree.Node memory _node)
-    public view override
-    returns (tree.NodeDetails memory) {
+  public view override
+  returns (tree.NodeDetails memory) {
     if (tree.isAvailable(_node)) {
       tree.NodeDetails memory ld = details(left(_node));
       tree.NodeDetails memory rd = details(right(_node));
@@ -183,8 +183,8 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
   }
 
   function left(tree.Node memory _node)
-    public view override
-    returns (tree.Node memory) {
+  public view override
+  returns (tree.Node memory) {
     if (tree.hasLeft(_node)) {
       return nodes[_node.left];
     } else {
@@ -193,8 +193,8 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
   }
 
   function right(tree.Node memory _node)
-    public view override
-    returns (tree.Node memory) {
+  public view override
+  returns (tree.Node memory) {
     if (tree.hasRight(_node)) {
       return nodes[_node.right];
     } else {

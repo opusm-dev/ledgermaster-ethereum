@@ -15,8 +15,9 @@ contract Controller is Controlled {
   mapping (uint => address) internal modules;
 
   function createModule(uint _id, string memory key) public returns (address) {
-    require(address(0x0) != modules[_id], ERR_NO_MODULE);
-    ContractFactory factory = ContractFactory(modules[_id]);
+    address addrezz = modules[_id];
+    require(address(0x0) != addrezz, ERR_NO_MODULE);
+    ContractFactory factory = ContractFactory(addrezz);
     factory.create(key);
     address newModule = factory.get(key);
     require(address(0x0) != newModule, ERR_MODULE_CREATION_FAILURE);
@@ -25,7 +26,9 @@ contract Controller is Controlled {
   }
 
   function getModule(uint _id) public view returns (address) {
-    return modules[_id];
+    address addrezz = modules[_id];
+    require(address(0x0) != addrezz, ERR_NO_MODULE);
+    return addrezz;
   }
 
   function setModule(uint _id, address _address) public onlyModulesGovernor {

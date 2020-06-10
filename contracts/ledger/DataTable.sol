@@ -9,6 +9,7 @@ import "../proxy/Modules.sol";
 import "../Index.sol";
 import "../Table.sol";
 import "../Constraint.sol";
+import "../RowRepository.sol";
 
 contract DataTable is Table, Controller, Modules {
   /* General operations */
@@ -39,7 +40,6 @@ contract DataTable is Table, Controller, Modules {
   string keyColumn;
   table.Column[] Columns;
   table.Index[] Indices;
-  mapping(string => table.Row) private Rows;
   Constraint[] Constraints;
 
   modifier statusAvailable {
@@ -73,6 +73,14 @@ contract DataTable is Table, Controller, Modules {
       columns: Columns,
       indices: Indices
     });
+  }
+
+  /**************/
+  /* Delegation */
+  /**************/
+  function rowRepository() private view returns(RowRepository) {
+    address addrezz = getModule(ROW_REPOSITORY);
+    return RowRepository(addrezz);
   }
 
   /*********************************/
@@ -223,29 +231,25 @@ contract DataTable is Table, Controller, Modules {
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraints[i].checkInsert(msg.sender, row), ERR_CONSTRAINTS);
     }
-    Rows[key] = table.Row({
-      names: row.names,
-      values: row.values,
-      available: true
-    });
+    rowRepository().set(key, row);
     addIndexFor(row);
   }
 
   function removeRow(string memory key) public statusAvailable {
     // Check if it exists
-    table.Row memory row = Rows[key];
+    table.Row memory row = getRow(key);
     require(row.available, ERR_NO_DATA);
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraints[i].checkDelete(msg.sender, row), ERR_CONSTRAINTS);
     }
     removeIndexFor(row);
-    delete Rows[key];
+    rowRepository().remove(key);
   }
 
   function updateRow(table.Row memory newRow) public statusAvailable {
     require(newRow.names.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = getColumnValue(newRow, keyColumn);
-    table.Row memory oldRow = Rows[key];
+    table.Row memory oldRow = getRow(key);
     require(oldRow.available, ERR_NO_DATA);
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraints[i].checkUpdate(msg.sender, oldRow, newRow), ERR_CONSTRAINTS);
@@ -261,29 +265,15 @@ contract DataTable is Table, Controller, Modules {
         index.add(newColumn, key);
       }
     }
-    Rows[key] = table.Row({
-      names: newRow.names,
-      values: newRow.values,
-      available: true
-    });
+    rowRepository().set(key, newRow);
   }
 
   function getRow(string memory key) public view statusAvailable returns (table.Row memory) {
-    return Rows[key];
+    return rowRepository().get(key);
   }
 
   function getRows(string[] memory keys, bool reverse) private view statusAvailable returns (table.Row[] memory) {
-    table.Row[] memory r = new table.Row[](keys.length);
-    if (reverse) {
-      for (uint i = 0 ; i < keys.length ; ++i) {
-        r[i] = getRow(keys[keys.length - i - 1]);
-      }
-    } else {
-      for (uint i = 0 ; i < keys.length ; ++i) {
-        r[i] = getRow(keys[i]);
-      }
-    }
-    return r;
+    return rowRepository().get(keys, reverse);
   }
 
   /**
@@ -308,87 +298,9 @@ contract DataTable is Table, Controller, Modules {
       }
     }
 
-    // If no index for column
-    for (uint i = 0 ; i < Indices.length ; ++i) {
-      if (utils.equals(Indices[i].columnName, keyColumn)) {
-        Index index = Index(Indices[i].addrezz);
-        table.Row[] memory allRows = getRows(index.findBy('', -1, '', -1), false);
-        table.Row[] memory filteredRows = filter(allRows, _column, _start, _st, _end, _et);
-        if (0 != _orderType) {
-          table.Row[] memory ascendingSorted = sort(filteredRows, _column, 0, filteredRows.length);
-          if (-1 == _orderType) {
-            return reverse(filteredRows);
-          }
-          return ascendingSorted;
-        } else {
-          return filteredRows;
-        }
-      }
-    }
-    return getRows(new string[](0), false);
+    return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
   }
 
-  function filter(table.Row[] memory _list, string memory _column, string memory _start, int _st, string memory _end, int _et)
-  private pure
-  returns (table.Row[] memory) {
-    uint n = 0;
-    bool[] memory accepts = new bool[](_list.length);
-    for (uint i = 0 ; i<_list.length ; ++i) {
-      string memory value = getColumnValue(_list[i], _column);
-      if (utils.checkBound(_start, _st, _end, _et, value)) {
-        accepts[i] = true;
-        ++n;
-      } else {
-        accepts[i] = false;
-      }
-    }
-    table.Row[] memory filtered = new table.Row[](n);
-    uint targetIndex = 0;
-    for (uint sourceIndex = 0 ; sourceIndex < _list.length ; ++sourceIndex) {
-      if (accepts[sourceIndex]) {
-        filtered[targetIndex++] = _list[sourceIndex];
-      }
-    }
-    return filtered;
-  }
-
-  function sort(table.Row[] memory _list, string memory _column, uint _start, uint _end) private view returns (table.Row[] memory) {
-    if (_end - _start < 2) {
-      return _list;
-    }
-    uint bandStart = _start;
-    uint bandEnd = _start;
-    uint i = _start + 1;
-    string memory bandValue = getColumnValue(_list[bandStart], _column);
-
-    while (i < _end) {
-      string memory v = getColumnValue(_list[i], _column);
-      int comparison = utils.compare(bandValue, v);
-      if (0 == comparison) {
-        ++bandEnd;
-      } else if (comparison > 0) {
-        table.Row memory temp = _list[bandStart];
-        _list[bandStart] = _list[i];
-        _list[i] = _list[bandEnd+1];
-        _list[bandEnd+1] = temp;
-        ++bandStart;
-        ++bandEnd;
-      }
-      ++i;
-    }
-    return sort(sort(_list, _column, _start, bandStart), _column, bandEnd + 1, _end);
-  }
-
-  function reverse(table.Row[] memory _list) private pure returns (table.Row[] memory) {
-    uint middlePoint = _list.length / 2;
-    table.Row memory temp;
-    for (uint i = 0 ; i < middlePoint ; ++i) {
-      temp = _list[i];
-      _list[i] = _list[_list.length - i - 1];
-      _list[_list.length - i - 1] = temp;
-    }
-    return _list;
-  }
 
   /* Library */
   function getColumnValue(table.Row memory row, string memory columnName) internal pure returns (string memory) {

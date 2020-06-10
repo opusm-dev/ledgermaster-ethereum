@@ -8,6 +8,7 @@ contract Modules {
   /* In table */
   uint internal constant INDEX_FACTORY = 200;
   uint internal constant NODE_REPOSITORY_FACTORY = 201;
+  uint internal constant ROW_REPOSITORY = 202;
 
   /* In Avl Tree */
   uint internal constant NODE_REPOSITORY = 300;

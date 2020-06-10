@@ -18,6 +18,7 @@ contract DataTableFactory is ContractFactory, Controlled, Modules {
   function create(string memory key) public override {
     require(address(0) == contracts[key]);
     DataTable table = new DataTable();
+    table.setModule(ROW_REPOSITORY, controller.getModule(ROW_REPOSITORY));
     table.setModule(NODE_REPOSITORY_FACTORY, controller.getModule(NODE_REPOSITORY_FACTORY));
     //table.setModule(TREE_FACTORY, controller.getModule(TREE_FACTORY));
     table.setModule(MIN_FINDER, controller.getModule(MIN_FINDER));
