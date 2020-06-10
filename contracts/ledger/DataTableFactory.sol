@@ -9,6 +9,8 @@ import "../ContractFactory.sol";
 import "./DataTable.sol";
 
 contract DataTableFactory is ContractFactory, Controlled, Modules {
+  string private constant ERR_DUPLICATED = "CONTRACT_DUPLICATED";
+  
   mapping(string => address) contracts;
 
   Controller controller;
@@ -16,7 +18,7 @@ contract DataTableFactory is ContractFactory, Controlled, Modules {
     controller = Controller(_address);
   }
   function create(string memory key) public override {
-    require(address(0) == contracts[key]);
+    require(address(0x0) == contracts[key], ERR_DUPLICATED);
     DataTable table = new DataTable();
     table.setModule(ROW_REPOSITORY, controller.getModule(ROW_REPOSITORY));
     table.setModule(NODE_REPOSITORY_FACTORY, controller.getModule(NODE_REPOSITORY_FACTORY));
