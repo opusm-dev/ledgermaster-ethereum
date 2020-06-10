@@ -285,6 +285,12 @@ contract DataTable is Table, Controller, Modules {
   function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType)
   public view statusAvailable
   returns (table.Row[] memory) {
+    bool bFound = false;
+    for (uint i = 0 ; i < Columns.length ; ++i) {
+      bFound = bFound || utils.equals(Columns[i].columnName, _column);
+    }
+    require(bFound, ERR_NO_DATA);
+
     // Check if column have index
     for (uint i = 0 ; i < Indices.length ; ++i) {
       if (utils.equals(Indices[i].columnName, _column)) {
