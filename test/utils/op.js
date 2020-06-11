@@ -250,7 +250,7 @@ module.exports = {
     let table;
     return Promise.all([
       DataTable.new(),
-      SimpleRowRepositoryFactory.new(),
+      SimpleRowRepository.new(),
       SimpleNodeRepositoryFactory.new(),
       MinimumFinder.deployed(),
       NodeFinder.deployed(),

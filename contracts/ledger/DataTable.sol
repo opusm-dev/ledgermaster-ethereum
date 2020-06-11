@@ -188,7 +188,7 @@ contract DataTable is Table, Controller, Modules {
     // Check if index deleted
     require(1 == deletionCount, ERR_NO_DATA);
     // Check if index size decreased
-    require(beforeIndices - deletionCount == Columns.length, ERR_ILLEGAL);
+    require(beforeIndices - deletionCount == Indices.length, ERR_ILLEGAL);
   }
 
   /**
@@ -275,6 +275,8 @@ contract DataTable is Table, Controller, Modules {
   function getRows(string[] memory keys, bool reverse) private view statusAvailable returns (table.Row[] memory) {
     return rowRepository().get(keys, reverse);
   }
+
+  event A(bool t);
 
   /**
    * _orderType
