@@ -11,6 +11,11 @@ import "../proxy/Controller.sol";
 import "../proxy/Modules.sol";
 
 contract TableStore is Controller, Modules {
+  string private constant ERR_NO_TABLE = "NO_TABLE";
+  string private constant ERR_TABLE_NAME = "INVALID_TABLE_NAME";
+  string private constant ERR_ALREADY_EXISTS = "ALREADY_EXISTS";
+
+
   string[] TableNames;
   mapping(string => address) private Tables;
 
@@ -20,8 +25,8 @@ contract TableStore is Controller, Modules {
   function registerTable(address _address) public onlyModulesGovernor {
     Table table = Table(_address);
     string memory tableName = table.getMetadata().name;
-    require(utils.isNotEmpty(tableName));
-    require(address(0x0) == Tables[tableName]);
+    require(utils.isNotEmpty(tableName), ERR_TABLE_NAME);
+    require(address(0x0) == Tables[tableName], ERR_ALREADY_EXISTS);
     Tables[tableName] = _address;
     TableNames.push(tableName);
   }
@@ -30,7 +35,7 @@ contract TableStore is Controller, Modules {
    * 테이블을 등록해제한다.
    */
   function deregisterTable(string memory _name) public onlyModulesGovernor {
-    require(address(0x0) != Tables[_name]);
+    require(address(0x0) != Tables[_name], ERR_NO_TABLE);
     delete Tables[_name];
     for (uint i=0 ; i<TableNames.length ; ++i) {
       if (utils.equals(TableNames[i], _name)) {

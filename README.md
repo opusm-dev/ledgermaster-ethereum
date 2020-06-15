@@ -23,6 +23,11 @@
  $ npm install -g ganache-cli
 ```
 
+# Build
+```console
+ $ npm install
+```
+
 # Test
 ## Using ganache
 ```console
