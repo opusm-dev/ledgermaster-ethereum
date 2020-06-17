@@ -22,6 +22,7 @@ contract DataTable is Table, Controller, Modules {
   string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
 
   /* Column-related error */
+  string private constant ERR_INVALID_COLUMN = "INVALID_COLUMN";
 
   /* Index-related error */
   string private constant ERR_INDEXED_COLUMN = "CTR_INDEXED_COLUMN";
@@ -276,8 +277,6 @@ contract DataTable is Table, Controller, Modules {
     return rowRepository().get(keys, reverse);
   }
 
-  event A(bool t);
-
   /**
    * _orderType
    * -1 : 내림차순 정렬
@@ -291,7 +290,7 @@ contract DataTable is Table, Controller, Modules {
     for (uint i = 0 ; i < Columns.length ; ++i) {
       bFound = bFound || utils.equals(Columns[i].columnName, _column);
     }
-    require(bFound, ERR_NO_DATA);
+    require(bFound, ERR_INVALID_COLUMN);
 
     // Check if column have index
     for (uint i = 0 ; i < Indices.length ; ++i) {
