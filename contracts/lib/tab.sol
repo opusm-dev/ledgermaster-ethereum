@@ -32,10 +32,4 @@ library table {
     bool available;
   }
 
-  function validateColumnName(string memory _name) internal pure returns (bool) {
-    return utils.isNotEmpty(_name);
-  }
-  function validateColumn(string memory _name, int _type) internal pure returns (bool) {
-    return ((_type == 1) || (_type == 2)) && validateColumnName(_name);
-  }
 }

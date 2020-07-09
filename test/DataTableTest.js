@@ -20,7 +20,7 @@ contract('DataTable', (accounts) => {
   beforeEach('', () => {
     const tableName = nameGen();
     keyColumnName = nameGen();
-    return createTable(tableName, keyColumnName).then(t => table = t);
+    return createTable(null,  tableName, keyColumnName).then(t => table = t);
   });
 
   it('get row', async() => {
@@ -119,7 +119,7 @@ contract('DataTable', (accounts) => {
   });
 
   it('case 1', () => {
-    return createTable('certificate', 'id')
+    return createTable(null, 'certificate', 'id')
       .then(t => t.addColumn('parent', 1)
         .then(() => t.addIndex('idx_parent', 'parent'))
         .then(() => addRow(t, { names: ['id', 'parent'], values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', ''], available: true }))

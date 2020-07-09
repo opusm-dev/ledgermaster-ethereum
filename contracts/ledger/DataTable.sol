@@ -8,15 +8,17 @@ import "../proxy/Modules.sol";
 
 import "../Index.sol";
 import "../Table.sol";
-import "../Constraint.sol";
 import "../RowRepository.sol";
 
-contract DataTable is Table, Controller, Modules {
+import "./DataTableState.sol";
+
+contract DataTable is DataTableState, Table, Controller, Modules {
   /* General operations */
   string private constant ERR_ILLEGAL = "ILLEGAL_STATE";
   string private constant ERR_ALREADY_EXIST = "ALREADY_EXIST";
   string private constant ERR_NO_DATA = "NO_DATA";
   string private constant ERR_DUPLICATED = "DATA_DUPLICATED";
+  string private constant ERR_UNAUTHORIZED = "UNAUTHORIZED";
 
   /* Table status related error */
   string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
@@ -31,32 +33,38 @@ contract DataTable is Table, Controller, Modules {
   string private constant ERR_KEY_VALUE_SIZE = "KEY_VALUE_SIZE_NOT_MATCHED";
   string private constant ERR_CONSTRAINTS = "CONSTRAINT_VIOLATION";
 
-
-  int constant ST_CREATED = -1;
-  int constant ST_AVAILABLE = 0;
-  int constant ST_INITIALIZING = 1;
-  int constant ST_TEMPORARY_UNAVAILABLE = 2;
-  int internal status = ST_CREATED;
-  string name;
-  string keyColumn;
-  table.Column[] Columns;
-  table.Index[] Indices;
-  Constraint[] Constraints;
+  address[] Friends;
 
   modifier statusAvailable {
     require(status == ST_AVAILABLE, ERR_ST_AVAILABLE);
     _;
   }
 
-  function initialize(string memory _name, string memory _keyColumn, int _keyColumnType)
+  function requireAuthorized(address sender) private view {
+    if (msg.sender != sender) {
+      bool isFriend = false;
+      for (uint i = 0 ; i<Friends.length ; ++i) {
+        isFriend = isFriend || Friends[i] == msg.sender;
+      }
+      require(isFriend, ERR_UNAUTHORIZED);
+    }
+  }
+
+  function initialize(address _store, string memory _name, string memory _keyColumn, int _keyColumnType)
   public override {
+    store = _store;
     require(status == ST_CREATED, "Already initialized");
     status = ST_INITIALIZING;
     name = _name;
     keyColumn = _keyColumn;
     addColumn(_keyColumn, _keyColumnType);
     addIndex(name, keyColumn);
+    require(status == ST_INITIALIZING);
     status = ST_AVAILABLE;
+  }
+
+  function getStore() public override returns (address) {
+    return store;
   }
 
   function setStatus(int _status)
@@ -76,6 +84,10 @@ contract DataTable is Table, Controller, Modules {
     });
   }
 
+  function addFriend(address friend) public {
+    Friends.push(friend);
+  }
+
   /**************/
   /* Delegation */
   /**************/
@@ -88,78 +100,33 @@ contract DataTable is Table, Controller, Modules {
   /* Constraint-related governance */
   /*********************************/
   function addConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
-    for (uint i = 0 ; i < Constraints.length ; ++i) {
-      require(address(Constraints[i]) != addrezz, ERR_ALREADY_EXIST);
-    }
-    Constraints.push(Constraint(addrezz));
+    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('addConstraint(address)', addrezz));
+    require(success, 'fail to add constraint');
   }
 
   function removeConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
-    uint deletionCount = 0;
-    uint beforeColumns = Constraints.length;
-    for (uint i = 0 ; i<Indices.length ; ++i ) {
-      uint index = uint(i - deletionCount);
-      if (address(Constraints[index]) == addrezz) {
-        Constraints[index] = Constraints[Indices.length - 1];
-        Indices.pop();
-        ++deletionCount;
-        --i;
-      }
-    }
-    // Check if column deleted
-    require(1 == deletionCount, ERR_NO_DATA);
-    // Check if column size decreased
-    require(beforeColumns - deletionCount == Constraints.length, ERR_ILLEGAL);
+    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('removeConstraint(address)', addrezz));
+    require(success, 'fail to remove constraint');
   }
 
   /*****************************/
   /* Column-related governance */
   /*****************************/
-  function addColumn(string memory _name, int _type) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
-    require(table.validateColumn(_name, _type), "Column is not valid");
-    for (uint i = 0 ; i<Columns.length ; ++i) {
-      // Check column name duplication
-      require(utils.notEquals(Columns[i].columnName, _name), ERR_DUPLICATED);
-    }
-    table.Column memory column = table.Column({
-      columnName: _name,
-      columnType: _type
-    });
-    Columns.push(column);
+  function addColumn(string memory _name, int256 _type) public {
+    (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('addColumn(string,int256)', _name, _type));
+    require(success, 'fail to add a column');
   }
 
   function removeColumn(string memory _name) public statusAvailable {
-    uint deletionCount = 0;
-    uint beforeColumns = Columns.length;
-    // 키 칼럼은 삭제할 수 없다.
-    require(utils.notEquals(keyColumn, _name), "Should not remove key column");
-    // 인덱스가 있으면 삭제할 수 없다.
-    for (uint i = 0 ; i<Indices.length ; ++i ) {
-      require(utils.notEquals(Indices[i].columnName, _name), ERR_INDEXED_COLUMN);
-    }
-    for (uint i = 0 ; i < Columns.length ; ++i) {
-      uint index = uint(i - deletionCount);
-      if (utils.equals(Columns[index].columnName, _name)) {
-        Columns[index] = Columns[Columns.length - 1];
-        Columns.pop();
-        ++deletionCount;
-        --i;
-      }
-    }
-    // Check if column deleted
-    require(1 == deletionCount, ERR_NO_DATA);
-    // Check if column size decreased
-    require(beforeColumns - deletionCount == Columns.length, ERR_ILLEGAL);
+    (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('removeColumn(string)', _name));
+    require(success, 'fail to remove a column');
   }
 
   /****************************/
   /* Index-related governance */
   /****************************/
   function addIndex(string memory _name, string memory _column) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    require((status == ST_AVAILABLE) || (status == ST_INITIALIZING), "Status must be ST_AVAILABLE or ST_INITIALIZING");
     // Add index
     for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication
@@ -226,35 +193,47 @@ contract DataTable is Table, Controller, Modules {
   /* Row-related governance */
   /**************************/
   function addRow(table.Row memory row) public statusAvailable {
+    addRow(msg.sender, row);
+  }
+
+  function removeRow(string memory key) public statusAvailable {
+    removeRow(msg.sender, key);
+  }
+
+  function updateRow(table.Row memory newRow) public statusAvailable {
+    updateRow(msg.sender, newRow);
+  }
+
+  function addRow(address sender, table.Row memory row) public statusAvailable {
+    requireAuthorized(sender);
     string memory key = getColumnValue(row, keyColumn);
     require(row.names.length == row.values.length, ERR_KEY_VALUE_SIZE);
     require(!getRow(key).available, ERR_ALREADY_EXIST);
-    for (uint i = 0 ; i < Constraints.length ; ++i) {
-      require(Constraints[i].checkInsert(msg.sender, row), ERR_CONSTRAINTS);
-    }
+    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,(string[],string[],bool))', sender, row));
+    require(success, ERR_CONSTRAINTS);
     rowRepository().set(key, row);
     addIndexFor(row);
   }
 
-  function removeRow(string memory key) public statusAvailable {
+  function removeRow(address sender, string memory key) public statusAvailable {
+    requireAuthorized(sender);
     // Check if it exists
     table.Row memory row = getRow(key);
     require(row.available, ERR_NO_DATA);
-    for (uint i = 0 ; i < Constraints.length ; ++i) {
-      require(Constraints[i].checkDelete(msg.sender, row), ERR_CONSTRAINTS);
-    }
+    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,(string[],string[],bool))', sender, row));
+    require(success, ERR_CONSTRAINTS);
     removeIndexFor(row);
     rowRepository().remove(key);
   }
 
-  function updateRow(table.Row memory newRow) public statusAvailable {
+  function updateRow(address sender, table.Row memory newRow) public statusAvailable {
+    requireAuthorized(sender);
     require(newRow.names.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = getColumnValue(newRow, keyColumn);
     table.Row memory oldRow = getRow(key);
     require(oldRow.available, ERR_NO_DATA);
-    for (uint i = 0 ; i < Constraints.length ; ++i) {
-      require(Constraints[i].checkUpdate(msg.sender, oldRow, newRow), ERR_CONSTRAINTS);
-    }
+    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],string[],bool),(string[],string[],bool))', sender, oldRow, newRow));
+    require(success, ERR_CONSTRAINTS);
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       string memory columnName = Indices[i].columnName;
@@ -308,7 +287,6 @@ contract DataTable is Table, Controller, Modules {
     return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
   }
 
-
   /* Library */
   function getColumnValue(table.Row memory row, string memory columnName) internal pure returns (string memory) {
     for (uint i = 0 ; i < row.names.length ; ++i) {
@@ -317,5 +295,21 @@ contract DataTable is Table, Controller, Modules {
       }
     }
     return "";
+  }
+
+  function intToString(int v) public pure returns (string memory) {
+    uint maxlength = 100;
+    bytes memory reversed = new bytes(maxlength);
+    uint i = 0;
+    while (v != 0) {
+      int remainder = v % 10;
+      v = v / 10;
+      reversed[i++] = byte(int8(48 + remainder));
+    }
+    bytes memory s = new bytes(i + 1);
+    for (uint j = 0; j <= i; j++) {
+      s[j] = reversed[i - j];
+    }
+    return string(s);
   }
 }

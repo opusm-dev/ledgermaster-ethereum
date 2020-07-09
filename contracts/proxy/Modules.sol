@@ -9,6 +9,8 @@ contract Modules {
   uint internal constant INDEX_FACTORY = 200;
   uint internal constant NODE_REPOSITORY_FACTORY = 201;
   uint internal constant ROW_REPOSITORY = 202;
+  uint internal constant PART_CONSTRAINTS = 230;
+  uint internal constant PART_COLUMNS = 231;
 
   /* In Avl Tree */
   uint internal constant NODE_REPOSITORY = 300;

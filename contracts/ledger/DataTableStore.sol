@@ -10,7 +10,7 @@ import "./IndexFactory.sol";
 import "../proxy/Controller.sol";
 import "../proxy/Modules.sol";
 
-contract TableStore is Controller, Modules {
+contract DataTableStore is Controller, Modules {
   string private constant ERR_NO_TABLE = "NO_TABLE";
   string private constant ERR_TABLE_NAME = "INVALID_TABLE_NAME";
   string private constant ERR_ALREADY_EXISTS = "ALREADY_EXISTS";

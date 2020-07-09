@@ -3,6 +3,8 @@ const { v4: uuid } = require('uuid');
 const logger = require('./logger.js');
 const modules = require('./modules.js');
 
+const DataTableColumns = artifacts.require('DataTableColumns');
+const DataTableConstraints = artifacts.require('DataTableConstraints');
 const DataTable = artifacts.require('DataTable');
 const SimpleRowRepository = artifacts.require('SimpleRowRepository');
 const SimpleNodeRepositoryFactory = artifacts.require('SimpleNodeRepositoryFactory');
@@ -46,7 +48,9 @@ function removeNodeValue(value, tree) {
           .then(root => repository.details(root))
           .then(details => expect(details.isBalanced).to.eq(true))
           .then(() => repository.contains(valueStr, valueStr).then(it => expect(it).to.eq(false)))
-          .then(() => repository.size().then(it => expect(it.toNumber()).to.eql(size - 1)));
+          .then(() => repository.size().then(it => {
+            return expect(it.toNumber()).to.eql(size - 1);
+          }));
       });
     });
 }
@@ -245,10 +249,12 @@ module.exports = {
       .then(tree => configure(tree))
   },
 
-  createTable: function(tableName, keyColumnName) {
+  createTable: function(store, tableName, keyColumnName) {
     const type = 1;
     let table;
     return Promise.all([
+      DataTableColumns.deployed(),
+      DataTableConstraints.deployed(),
       DataTable.new(),
       SimpleRowRepository.new(),
       SimpleNodeRepositoryFactory.new(),
@@ -258,28 +264,31 @@ module.exports = {
       AvlTreeVisitor.deployed(),
       AvlTreeNodeManager.deployed()])
       .then((values) => {
-        const table = values[0];
-        const rowRepository = values[1]
-        const repositoryFactory = values[2];
-        const minFinder = values[3];
-        const nodeFinder = values[4];
-        const balancer = values[5];
-        const visitor = values[6];
-        const manager = values[7];
-
-        return table.setModule(modules.NODE_REPOSITORY_FACTORY, repositoryFactory.address)
-        .then(() => table.setModule(modules.ROW_REPOSITORY, rowRepository.address))
-        .then(() => table.setModule(modules.MIN_FINDER, minFinder.address))
-        .then(() => table.setModule(modules.NODE_FINDER, nodeFinder.address))
-        .then(() => table.setModule(modules.BALANCER, balancer.address))
-        .then(() => table.setModule(modules.VISITOR, visitor.address))
-        .then(() => table.setModule(modules.MANAGER, manager.address))
-        .then(() => table)
+        const tableColumns = values[0];
+        const tableConstraints = values[1];
+        const table = values[2];
+        const rowRepository = values[3]
+        const repositoryFactory = values[4];
+        const minFinder = values[5];
+        const nodeFinder = values[6];
+        const balancer = values[7];
+        const visitor = values[8];
+        const manager = values[9];
+        return table.setModule(modules.TABLE_COLUMNS, tableColumns.address)
+          .then(() => table.setModule(modules.TABLE_CONSTRAINTS, tableConstraints.address))
+          .then(() => table.setModule(modules.NODE_REPOSITORY_FACTORY, repositoryFactory.address))
+          .then(() => table.setModule(modules.ROW_REPOSITORY, rowRepository.address))
+          .then(() => table.setModule(modules.MIN_FINDER, minFinder.address))
+          .then(() => table.setModule(modules.NODE_FINDER, nodeFinder.address))
+          .then(() => table.setModule(modules.BALANCER, balancer.address))
+          .then(() => table.setModule(modules.VISITOR, visitor.address))
+          .then(() => table.setModule(modules.MANAGER, manager.address))
+          .then(() => table)
       })
       .then(t => table = t)
       .then(() => IndexFactory.new(table.address))
       .then((idxFactory) => table.setModule(modules.INDEX_FACTORY, idxFactory.address))
-      .then(() => table.initialize(tableName, keyColumnName, 1))
+      .then(() => table.initialize((null == store)?'0x0000000000000000000000000000000000000000':(store.address), tableName, keyColumnName, 1))
       .then(() => table.getMetadata())
       .then(meta => meta.columns)
       .then(columns => columns.map(it => it.columnName))

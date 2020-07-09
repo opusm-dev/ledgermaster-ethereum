@@ -20,7 +20,7 @@ contract('DataTableGovernance', (accounts) => {
   beforeEach('', () => {
     const tableName = nameGen();
     keyColumnName = nameGen();
-    return createTable(tableName, keyColumnName).then(t => table = t);
+    return createTable(null, tableName, keyColumnName).then(t => table = t);
   });
 
   it('test add / remove column', async () => {

@@ -5,7 +5,8 @@ pragma experimental ABIEncoderV2;
 import "./lib/tab.sol";
 
 interface Table {
-  function initialize(string calldata _name, string calldata _keyColumn, int _keyColumnType) external;
+  function initialize(address store, string calldata _name, string calldata _keyColumn, int _keyColumnType) external;
+  function getStore() external returns (address);
   function setStatus(int status) external;
   function getMetadata() external view returns (table.TableMetadata memory);
 }
