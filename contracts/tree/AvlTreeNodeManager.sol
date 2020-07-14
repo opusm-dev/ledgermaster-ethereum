@@ -122,7 +122,6 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
   }
 
   function balance(NodeRepository repository) private {
-    require(address(0x0) != getModule(BALANCER), ERR_NO_MODULE);
     (bool success, ) = getModule(BALANCER).delegatecall(abi.encodeWithSignature("balance(address)", repository));
     require(success, "Fail to balance");
   }

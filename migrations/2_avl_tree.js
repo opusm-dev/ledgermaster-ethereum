@@ -6,10 +6,12 @@ const AvlTreeVisitor = artifacts.require('AvlTreeVisitor');
 const AvlTreeNodeManager = artifacts.require('AvlTreeNodeManager');
 const AvlTree = artifacts.require('AvlTree');
 const DataTableColumns = artifacts.require('DataTableColumns');
+const DataTableIndices = artifacts.require('DataTableIndices');
 const DataTableConstraints = artifacts.require('DataTableConstraints');
 
 module.exports = function(deployer) {
   deployer.deploy(DataTableColumns);
+  deployer.deploy(DataTableIndices);
   deployer.deploy(DataTableConstraints);
   deployer.deploy(MinimumFinder);
   deployer.deploy(NodeFinder);

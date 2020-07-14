@@ -4,6 +4,7 @@ const logger = require('./logger.js');
 const modules = require('./modules.js');
 
 const DataTableColumns = artifacts.require('DataTableColumns');
+const DataTableIndices = artifacts.require('DataTableIndices');
 const DataTableConstraints = artifacts.require('DataTableConstraints');
 const DataTable = artifacts.require('DataTable');
 const SimpleRowRepository = artifacts.require('SimpleRowRepository');
@@ -254,6 +255,7 @@ module.exports = {
     let table;
     return Promise.all([
       DataTableColumns.deployed(),
+      DataTableIndices.deployed(),
       DataTableConstraints.deployed(),
       DataTable.new(),
       SimpleRowRepository.new(),
@@ -265,16 +267,18 @@ module.exports = {
       AvlTreeNodeManager.deployed()])
       .then((values) => {
         const tableColumns = values[0];
-        const tableConstraints = values[1];
-        const table = values[2];
-        const rowRepository = values[3]
-        const repositoryFactory = values[4];
-        const minFinder = values[5];
-        const nodeFinder = values[6];
-        const balancer = values[7];
-        const visitor = values[8];
-        const manager = values[9];
+        const tableIndices = values[1];
+        const tableConstraints = values[2];
+        const table = values[3];
+        const rowRepository = values[4]
+        const repositoryFactory = values[5];
+        const minFinder = values[6];
+        const nodeFinder = values[7];
+        const balancer = values[8];
+        const visitor = values[9];
+        const manager = values[10];
         return table.setModule(modules.TABLE_COLUMNS, tableColumns.address)
+          .then(() => table.setModule(modules.TABLE_INDICES, tableIndices.address))
           .then(() => table.setModule(modules.TABLE_CONSTRAINTS, tableConstraints.address))
           .then(() => table.setModule(modules.NODE_REPOSITORY_FACTORY, repositoryFactory.address))
           .then(() => table.setModule(modules.ROW_REPOSITORY, rowRepository.address))
