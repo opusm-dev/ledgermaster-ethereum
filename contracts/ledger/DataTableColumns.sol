@@ -1,25 +1,25 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../lib/system.sol";
-import "../lib/tab.sol";
-import "../Table.sol";
-import "./DataTableState.sol";
+import '../lib/system.sol';
+import '../lib/tab.sol';
+import '../Table.sol';
+import './DataTableState.sol';
 
 contract DataTableColumns is DataTableState {
   /* General operations */
-  string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
-  string private constant ERR_ILLEGAL = "ILLEGAL_STATE";
-  string private constant ERR_NO_DATA = "NO_DATA";
-  string private constant ERR_DUPLICATED = "DATA_DUPLICATED";
-  string private constant ERR_INDEXED_COLUMN = "CTR_INDEXED_COLUMN";
+  string private constant ERR_ST_AVAILABLE = 'SHOULD_BE_AVAILABLE';
+  string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_DATA_TABLE_COLUMNS';
+  string private constant ERR_NO_DATA = 'NO_DATA';
+  string private constant ERR_DUPLICATED = 'DATA_DUPLICATED';
+  string private constant ERR_INDEXED_COLUMN = 'CTR_INDEXED_COLUMN';
 
   /*****************************/
   /* Column-related governance */
   /*****************************/
   function addColumn(string memory _name, int256 _type) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
-    require(validateColumn(_name, _type), "Column is not valid");
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
+    require(validateColumn(_name, _type), 'Column is not valid');
     for (uint i = 0 ; i<Columns.length ; ++i) {
       // Check column name duplication
       require(utils.notEquals(Columns[i].columnName, _name), ERR_DUPLICATED);
@@ -36,7 +36,7 @@ contract DataTableColumns is DataTableState {
     uint deletionCount = 0;
     uint beforeColumns = Columns.length;
     // 키 칼럼은 삭제할 수 없다.
-    require(utils.notEquals(keyColumn, _name), "Should not remove key column");
+    require(utils.notEquals(keyColumn, _name), 'Should not remove key column');
     // 인덱스가 있으면 삭제할 수 없다.
     for (uint i = 0 ; i<Indices.length ; ++i ) {
       require(utils.notEquals(Indices[i].columnName, _name), ERR_INDEXED_COLUMN);

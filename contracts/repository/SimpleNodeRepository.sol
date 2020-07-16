@@ -2,15 +2,15 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 /* Interfaces */
-import "../proxy/Controlled.sol";
-import "../proxy/Controller.sol";
-import "../NodeRepository.sol";
+import '../proxy/Controlled.sol';
+import '../proxy/Controller.sol';
+import '../NodeRepository.sol';
 
-import "../proxy/Modules.sol";
+import '../proxy/Modules.sol';
 
 /* Utilities */
-import "../lib/system.sol";
-import "../lib/tree.sol";
+import '../lib/system.sol';
+import '../lib/tree.sol';
 
 contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
 {

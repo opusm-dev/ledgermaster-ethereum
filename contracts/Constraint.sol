@@ -1,7 +1,7 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "./lib/tab.sol";
+import './lib/tab.sol';
 
 interface Constraint {
   function checkInsert(address sender, address store, table.Row calldata row) external view returns (bool);

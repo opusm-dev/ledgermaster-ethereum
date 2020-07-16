@@ -1,7 +1,7 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../lib/tab.sol";
+import '../lib/tab.sol';
 
 contract DataTableState {
   int constant ST_CREATED = -1;

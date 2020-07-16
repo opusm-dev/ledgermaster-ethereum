@@ -1,9 +1,9 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../Visitor.sol";
-import "../NodeRepository.sol";
-import "../proxy/Modules.sol";
+import '../Visitor.sol';
+import '../NodeRepository.sol';
+import '../proxy/Modules.sol';
 
 contract AvlTreeVisitor is Visitor, Modules {
   /**

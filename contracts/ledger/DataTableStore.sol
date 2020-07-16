@@ -2,18 +2,18 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 /* Interfaces */
-import "../lib/system.sol";
-import "../Table.sol";
-import "./IndexFactory.sol";
+import '../lib/system.sol';
+import '../Table.sol';
+import './IndexFactory.sol';
 
 /* Utilities */
-import "../proxy/Controller.sol";
-import "../proxy/Modules.sol";
+import '../proxy/Controller.sol';
+import '../proxy/Modules.sol';
 
 contract DataTableStore is Controller, Modules {
-  string private constant ERR_NO_TABLE = "NO_TABLE";
-  string private constant ERR_TABLE_NAME = "INVALID_TABLE_NAME";
-  string private constant ERR_ALREADY_EXISTS = "ALREADY_EXISTS";
+  string private constant ERR_NO_TABLE = 'NO_TABLE';
+  string private constant ERR_TABLE_NAME = 'INVALID_TABLE_NAME';
+  string private constant ERR_ALREADY_EXISTS = 'ALREADY_EXISTS';
 
 
   string[] TableNames;

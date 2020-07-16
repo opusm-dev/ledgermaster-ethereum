@@ -1,12 +1,12 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../proxy/Controlled.sol";
-import "../proxy/Controller.sol";
-import "../proxy/Modules.sol";
+import '../proxy/Controlled.sol';
+import '../proxy/Controller.sol';
+import '../proxy/Modules.sol';
 
-import "../ContractFactory.sol";
-import "../tree/AvlTree.sol";
+import '../ContractFactory.sol';
+import '../tree/AvlTree.sol';
 
 contract IndexFactory is ContractFactory, Controlled, Modules {
   mapping(string => address) contracts;

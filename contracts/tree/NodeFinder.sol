@@ -2,12 +2,12 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 /* Interfaces */
-import "../PathFinder.sol";
-import "../NodeRepository.sol";
+import '../PathFinder.sol';
+import '../NodeRepository.sol';
 
 /* Utilities */
-import "../lib/system.sol";
-import "../lib/tree.sol";
+import '../lib/system.sol';
+import '../lib/tree.sol';
 
 /**
  * Find the node containing key.

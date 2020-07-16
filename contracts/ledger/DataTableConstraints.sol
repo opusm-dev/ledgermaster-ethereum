@@ -1,22 +1,22 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../lib/system.sol";
-import "../Constraint.sol";
-import "./DataTableState.sol";
+import '../lib/system.sol';
+import '../Constraint.sol';
+import './DataTableState.sol';
 
 contract DataTableConstraints is DataTableState {
   /* General operations */
-  string private constant ERR_ILLEGAL = "ILLEGAL_STATE";
-  string private constant ERR_ALREADY_EXIST = "ALREADY_EXIST";
-  string private constant ERR_NO_DATA = "NO_DATA";
-  string private constant ERR_CONSTRAINTS = "CONSTRAINT_VIOLATION";
+  string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_DATA_TABLE_CONSTRAINTS';
+  string private constant ERR_ALREADY_EXIST = 'ALREADY_EXIST_CONSTRAINT';
+  string private constant ERR_NO_DATA = 'NO_CONSTRAINT';
+  string private constant ERR_CONSTRAINTS = 'CONSTRAINT_VIOLATION';
 
   /*********************************/
   /* Constraint-related governance */
   /*********************************/
   function addConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraints[i] != addrezz, ERR_ALREADY_EXIST);
     }
@@ -24,7 +24,7 @@ contract DataTableConstraints is DataTableState {
   }
 
   function removeConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, "Status must be ST_AVAILABLE or ST_INITIALIZING");
+    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     uint deletionCount = 0;
     uint beforeColumns = Constraints.length;
     for (uint i = 0 ; i<Constraints.length ; ++i ) {

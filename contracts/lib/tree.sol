@@ -2,7 +2,7 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 /* Utilities */
-import "./system.sol";
+import './system.sol';
 
 library tree {
   struct Node {

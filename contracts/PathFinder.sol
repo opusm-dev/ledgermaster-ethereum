@@ -1,8 +1,8 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "./lib/tree.sol";
-import "./NodeRepository.sol";
+import './lib/tree.sol';
+import './NodeRepository.sol';
 
 interface PathFinder {
   /**

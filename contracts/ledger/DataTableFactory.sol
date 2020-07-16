@@ -1,15 +1,15 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../proxy/Controlled.sol";
-import "../proxy/Controller.sol";
-import "../proxy/Modules.sol";
+import '../proxy/Controlled.sol';
+import '../proxy/Controller.sol';
+import '../proxy/Modules.sol';
 
-import "../ContractFactory.sol";
-import "./DataTable.sol";
+import '../ContractFactory.sol';
+import './DataTable.sol';
 
 contract DataTableFactory is ContractFactory, Controlled, Modules {
-  string private constant ERR_DUPLICATED = "CONTRACT_DUPLICATED";
+  string private constant ERR_DUPLICATED = 'CONTRACT_DUPLICATED';
   
   mapping(string => address) contracts;
 

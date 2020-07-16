@@ -1,15 +1,15 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../NodeManager.sol";
-import "../NodeRepository.sol";
-import "../proxy/Modules.sol";
-import "../lib/system.sol";
-import "../lib/tree.sol";
-import "../proxy/Controller.sol";
+import '../NodeManager.sol';
+import '../NodeRepository.sol';
+import '../proxy/Modules.sol';
+import '../lib/system.sol';
+import '../lib/tree.sol';
+import '../proxy/Controller.sol';
 
 contract AvlTreeNodeManager is NodeManager, Controller, Modules {
-  string private constant ERR_ILLEGAL_STATE = "CTR_ILLEGAL_STATE";
+  string private constant ERR_ILLEGAL_STATE = 'CTR_ILLEGAL_STATE';
   event PathFound(tree.Node[] path);
   event NodeTraverseForRemove(string key, string remove);
 
@@ -122,8 +122,8 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
   }
 
   function balance(NodeRepository repository) private {
-    (bool success, ) = getModule(BALANCER).delegatecall(abi.encodeWithSignature("balance(address)", repository));
-    require(success, "Fail to balance");
+    (bool success, ) = getModule(BALANCER).delegatecall(abi.encodeWithSignature('balance(address)', repository));
+    require(success, 'Fail to balance');
   }
 
   function min(NodeRepository repository, tree.Node memory _node) private view returns (tree.Node memory) {

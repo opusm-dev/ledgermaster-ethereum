@@ -1,17 +1,17 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "./Controlled.sol";
-import "../NodeRepository.sol";
-import "../PathFinder.sol";
-import "../Index.sol";
-import "../ContractFactory.sol";
+import './Controlled.sol';
+import '../NodeRepository.sol';
+import '../PathFinder.sol';
+import '../Index.sol';
+import '../ContractFactory.sol';
 
 contract Controller is Controlled {
-  string internal constant PREFIX_NO_MODULE = "CTR_NO_MODULE: ";
-  string internal constant PREFIX_DUPLICATED_MODULE = "CTR_DUPLICATED_MODULE: ";
-  string internal constant ERR_MODULE_CREATION_FAILURE = "CTR_MODULE_CREATION_FAILURE";
-  string internal constant ERR_NOT_CONTROLLED = "CTR_NOT_CONTROLLED";
+  string internal constant PREFIX_NO_MODULE = 'CTR_NO_MODULE: ';
+  string internal constant PREFIX_DUPLICATED_MODULE = 'CTR_DUPLICATED_MODULE: ';
+  string internal constant ERR_MODULE_CREATION_FAILURE = 'CTR_MODULE_CREATION_FAILURE';
+  string internal constant ERR_NOT_CONTROLLED = 'CTR_NOT_CONTROLLED';
 
   mapping (uint => address) internal modules;
 

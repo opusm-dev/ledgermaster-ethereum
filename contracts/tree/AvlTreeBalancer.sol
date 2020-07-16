@@ -2,11 +2,11 @@ pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
 /* Utilities */
-import "../lib/system.sol";
-import "../lib/tree.sol";
+import '../lib/system.sol';
+import '../lib/tree.sol';
 
-import "../NodeRepository.sol";
-import "../Balancer.sol";
+import '../NodeRepository.sol';
+import '../Balancer.sol';
 
 contract AvlTreeBalancer is Balancer {
   tree.Node DUMMY_NODE = tree.Node({

@@ -1,37 +1,39 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../lib/system.sol";
-import "../lib/tab.sol";
-import "../proxy/Controller.sol";
-import "../proxy/Modules.sol";
+import '../lib/system.sol';
+import '../lib/tab.sol';
+import '../proxy/Controller.sol';
+import '../proxy/Modules.sol';
 
-import "../Index.sol";
-import "../Table.sol";
-import "../RowRepository.sol";
+import '../Index.sol';
+import '../Table.sol';
+import '../RowRepository.sol';
 
-import "./DataTableState.sol";
+import './DataTableState.sol';
 
 contract DataTable is DataTableState, Table, Controller, Modules {
   /* General operations */
-  string private constant ERR_ILLEGAL = "ILLEGAL_STATE";
-  string private constant ERR_ALREADY_EXIST = "ALREADY_EXIST";
-  string private constant ERR_NO_DATA = "NO_DATA";
-  string private constant ERR_DUPLICATED = "DATA_DUPLICATED";
-  string private constant ERR_UNAUTHORIZED = "UNAUTHORIZED";
+  string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_DATA_TABLE';
+  string private constant ERR_ALREADY_EXIST = 'ALREADY_EXIST';
+  string private constant ERR_NO_DATA = 'NO_DATA';
+  string private constant ERR_DUPLICATED = 'DATA_DUPLICATED';
+  string private constant ERR_UNAUTHORIZED = 'UNAUTHORIZED';
 
   /* Table status related error */
-  string private constant ERR_ST_AVAILABLE = "SHOULD_BE_AVAILABLE";
+  string private constant ERR_ST_AVAILABLE = 'SHOULD_BE_AVAILABLE';
 
   /* Column-related error */
-  string private constant ERR_INVALID_COLUMN = "INVALID_COLUMN";
+  string private constant ERR_INVALID_COLUMN = 'INVALID_COLUMN';
 
   /* Index-related error */
-  string private constant ERR_INDEXED_COLUMN = "CTR_INDEXED_COLUMN";
+  string private constant ERR_INDEXED_COLUMN = 'CTR_INDEXED_COLUMN';
 
   /* Row-related error */
-  string private constant ERR_KEY_VALUE_SIZE = "KEY_VALUE_SIZE_NOT_MATCHED";
-  string private constant ERR_CONSTRAINTS = "CONSTRAINT_VIOLATION";
+  string private constant ERR_KEY_VALUE_SIZE = 'KEY_VALUE_SIZE_NOT_MATCHED';
+  string private constant ERR_INSERT_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_INSERT';
+  string private constant ERR_UPDATE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_UPDATE';
+  string private constant ERR_DELETE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_DELETE';
 
   address[] Friends;
 
@@ -53,7 +55,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   function initialize(address _store, string memory _name, string memory _keyColumn, int _keyColumnType)
   public override {
     store = _store;
-    require(status == ST_CREATED, "Already initialized");
+    require(status == ST_CREATED, 'Already initialized');
     status = ST_INITIALIZING;
     name = _name;
     keyColumn = _keyColumn;
@@ -186,7 +188,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     require(row.names.length == row.values.length, ERR_KEY_VALUE_SIZE);
     require(!getRow(key).available, ERR_ALREADY_EXIST);
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,(string[],string[],bool))', sender, row));
-    require(success, ERR_CONSTRAINTS);
+    require(success, ERR_INSERT_CONSTRAINT);
     rowRepository().set(key, row);
     addIndexFor(row);
   }
@@ -197,7 +199,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     table.Row memory row = getRow(key);
     require(row.available, ERR_NO_DATA);
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,(string[],string[],bool))', sender, row));
-    require(success, ERR_CONSTRAINTS);
+    require(success, ERR_DELETE_CONSTRAINT);
     removeIndexFor(row);
     rowRepository().remove(key);
   }
@@ -209,7 +211,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     table.Row memory oldRow = getRow(key);
     require(oldRow.available, ERR_NO_DATA);
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],string[],bool),(string[],string[],bool))', sender, oldRow, newRow));
-    require(success, ERR_CONSTRAINTS);
+    require(success, ERR_UPDATE_CONSTRAINT);
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       string memory columnName = Indices[i].columnName;
@@ -248,6 +250,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     require(bFound, ERR_INVALID_COLUMN);
 
     // Check if column have index
+    /*
     for (uint i = 0 ; i < Indices.length ; ++i) {
       if (utils.equals(Indices[i].columnName, _column)) {
         // If index exists for column
@@ -259,6 +262,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
         }
       }
     }
+    */
 
     return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
   }
@@ -270,7 +274,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
         return row.values[i];
       }
     }
-    return "";
+    return '';
   }
 
   function intToString(int v) public pure returns (string memory) {

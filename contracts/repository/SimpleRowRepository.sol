@@ -1,11 +1,11 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../lib/tab.sol";
-import "../RowRepository.sol";
+import '../lib/tab.sol';
+import '../RowRepository.sol';
 
 contract SimpleRowRepository is RowRepository {
-  string private constant ERR_NO_DATA = "NO_DATA";
+  string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_ROW_REPOSITORY';
 
   struct RowNode {
     table.Row row;
@@ -24,12 +24,12 @@ contract SimpleRowRepository is RowRepository {
     if (reverse) {
       for (uint i = 0 ; i < keys.length ; ++i) {
         rows[i] = Rows[keys[keys.length - i - 1]].row;
-        require(rows[i].available, ERR_NO_DATA);
+        require(rows[i].available, ERR_ILLEGAL);
       }
     } else {
       for (uint i = 0 ; i < keys.length ; ++i) {
         rows[i] = Rows[keys[i]].row;
-        require(rows[i].available, ERR_NO_DATA);
+        require(rows[i].available, ERR_ILLEGAL);
       }
     }
     return rows;
@@ -53,7 +53,12 @@ contract SimpleRowRepository is RowRepository {
     });
   }
   function remove(string memory key) public override {
-    delete Rows[key];
+    RowNode memory node = Rows[key];
+    if (node.row.available) {
+      delete Rows[key];
+      Keys[node.index] = Keys[Keys.length-1];
+      Keys.pop();
+    }
   }
 
   function getAllRows() private view returns (table.Row[] memory) {
@@ -144,7 +149,7 @@ contract SimpleRowRepository is RowRepository {
         return row.values[i];
       }
     }
-    return "";
+    return '';
   }
 
 }

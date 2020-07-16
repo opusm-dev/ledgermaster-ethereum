@@ -1,8 +1,8 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "../ContractFactory.sol";
-import "./SimpleNodeRepository.sol";
+import '../ContractFactory.sol';
+import './SimpleNodeRepository.sol';
 
 contract SimpleNodeRepositoryFactory is ContractFactory {
   mapping(string => address) contracts;
