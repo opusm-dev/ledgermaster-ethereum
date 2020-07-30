@@ -56,7 +56,11 @@ contract SimpleRowRepository is RowRepository {
     RowNode memory node = Rows[key];
     if (node.row.available) {
       delete Rows[key];
-      Keys[node.index] = Keys[Keys.length-1];
+      if (Keys.length-1 != node.index) {
+        string memory lastKey = Keys[Keys.length-1];
+        Keys[node.index] = lastKey;
+        Rows[lastKey].index = node.index;
+      }
       Keys.pop();
     }
   }
