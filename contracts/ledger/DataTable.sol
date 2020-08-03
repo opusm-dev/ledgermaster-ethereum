@@ -170,19 +170,19 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   /**************************/
   /* Row-related governance */
   /**************************/
-  function addRow(table.Row memory row) public statusAvailable {
-    addRow(msg.sender, row);
+  function add(table.Row memory row) public statusAvailable {
+    add(msg.sender, row);
   }
 
-  function removeRow(string memory key) public statusAvailable {
-    removeRow(msg.sender, key);
+  function remove(string memory key) public statusAvailable {
+    remove(msg.sender, key);
   }
 
-  function updateRow(table.Row memory newRow) public statusAvailable {
-    updateRow(msg.sender, newRow);
+  function update(table.Row memory newRow) public statusAvailable {
+    update(msg.sender, newRow);
   }
 
-  function addRow(address sender, table.Row memory row) public statusAvailable {
+  function add(address sender, table.Row memory row) public statusAvailable {
     requireAuthorized(sender);
     string memory key = getColumnValue(row, keyColumn);
     require(row.names.length == row.values.length, ERR_KEY_VALUE_SIZE);
@@ -193,7 +193,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     addIndexFor(row);
   }
 
-  function removeRow(address sender, string memory key) public statusAvailable {
+  function remove(address sender, string memory key) public statusAvailable {
     requireAuthorized(sender);
     // Check if it exists
     table.Row memory row = getRow(key);
@@ -204,7 +204,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     rowRepository().remove(key);
   }
 
-  function updateRow(address sender, table.Row memory newRow) public statusAvailable {
+  function update(address sender, table.Row memory newRow) public statusAvailable {
     requireAuthorized(sender);
     require(newRow.names.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = getColumnValue(newRow, keyColumn);
@@ -235,6 +235,11 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   }
 
   /**
+   * point type:
+   * -1 - unbound
+   * 0 - Included bound
+   * 1 - Excluded bound
+
    * _orderType
    * -1 : 내림차순 정렬
    * 0 : 정렬 없음
@@ -249,22 +254,27 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     }
     require(bFound, ERR_INVALID_COLUMN);
 
-    // Check if column have index
-    /*
-    for (uint i = 0 ; i < Indices.length ; ++i) {
-      if (utils.equals(Indices[i].columnName, _column)) {
-        // If index exists for column
-        Index index = Index(Indices[i].addrezz);
-        if (-1 == _orderType) {
-          return getRows(index.findBy(_start, _st, _end, _et), true);
-        } else {
-          return getRows(index.findBy(_start, _st, _end, _et), false);
+    // Check if it is key and equals
+    if (0 == _st && 0 == _et && utils.equals(_start, _end) && utils.equals(_column, keyColumn)) {
+      string[] memory keys = new string[](1);
+      keys[0] = _start;
+      return getRows(keys, false);
+    } else {
+      // Check if column have index
+      for (uint i = 0 ; i < Indices.length ; ++i) {
+        if (utils.equals(Indices[i].columnName, _column)) {
+          // If index exists for column
+          Index index = Index(Indices[i].addrezz);
+          if (-1 == _orderType) {
+            return getRows(index.findBy(_start, _st, _end, _et), true);
+          } else {
+            return getRows(index.findBy(_start, _st, _end, _et), false);
+          }
         }
       }
-    }
-    */
 
-    return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
+      return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
+    }
   }
 
   /* Library */

@@ -24,8 +24,8 @@ contract('DataTable', (accounts) => {
   });
 
   it('get row', async() => {
-    return table.addRow({names: [keyColumnName], values: ['0x176b615d4e826429504a18d6eb8a2eaba86e5de7']})
-      .then(() => table.getRow('0x176b615d4e826429504a18d6eb8a2eaba86e5de7').then((it) => expect(it[2]).to.equal(true)));
+    return table.add({names: [keyColumnName], values: ['0x176b615d4e826429504a18d6eb8a2eaba86e5de7']})
+      .then(() => table.findBy(keyColumnName, '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', 0, '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', 0, 0).then((it) => expect(it[0][2]).to.equal(true)));
   });
 
   it('test add / remove / update / findBy', async() => {
@@ -123,7 +123,7 @@ contract('DataTable', (accounts) => {
       .then(t => t.addColumn('parent', 1)
         .then(() => t.addIndex('idx_parent', 'parent'))
         .then(() => addRow(t, { names: ['id', 'parent'], values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', ''], available: true }))
-        .then(() => t.getRow('c2ceb24f-ea41-48f2-aca8-f59777ca5357'))
+        .then(() => t.findBy('id', 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 0))
         .then(() => t.findBy('parent', 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 1)));
   });
 

@@ -113,7 +113,7 @@ function addRow(row, table) {
   [...row.names.keys()].forEach(i => localMap[row.names[i]] = row.values[i]);
   return table.getRow(row.values[0])
     .then(r => expect(r.available).to.eq(false))
-    .then(() => table.addRow(row))
+    .then(() => table.add(row))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
       expect(r.available).to.eq(true);
@@ -129,7 +129,7 @@ function updateRow(row, table) {
   [...row.names.keys()].forEach(i => localMap[row.names[i]] = row.values[i]);
   return table.getRow(row.values[0])
     .then(r => expect(r.available).to.eq(true))
-    .then(() => table.updateRow(row))
+    .then(() => table.update(row))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
       expect(r.available).to.eq(true);
@@ -143,7 +143,7 @@ function removeRow(key, table) {
   logger.action('Remove row ' + key + ' from ' + table.address.substring(0, 10));
   return table.getRow(key)
     .then(r => expect(r.available).to.eq(true))
-    .then(() => table.removeRow(key))
+    .then(() => table.remove(key))
     .then(() => table.getRow(key))
     .then(r => expect(r.available).to.eq(false));
 }
