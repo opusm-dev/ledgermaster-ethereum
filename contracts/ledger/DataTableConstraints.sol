@@ -9,7 +9,7 @@ contract DataTableConstraints is DataTableState {
   /* General operations */
   string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_DATA_TABLE_CONSTRAINTS';
   string private constant ERR_ALREADY_EXIST = 'ALREADY_EXIST_CONSTRAINT';
-  string private constant ERR_NO_DATA = 'NO_CONSTRAINT';
+  string private constant ERR_NO_CONSTRAINT = 'NO_CONSTRAINT';
   string private constant ERR_CONSTRAINTS = 'CONSTRAINT_VIOLATION';
 
   /*********************************/
@@ -37,7 +37,7 @@ contract DataTableConstraints is DataTableState {
       }
     }
     // Check if column deleted
-    require(1 == deletionCount, ERR_NO_DATA);
+    require(1 == deletionCount, ERR_NO_CONSTRAINT);
     // Check if column size decreased
     require(beforeColumns - deletionCount == Constraints.length, ERR_ILLEGAL);
   }
