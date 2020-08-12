@@ -74,10 +74,10 @@ function deregisterTable(name, ts) {
 function addColumn(name, table) {
   const type = 1;
   logger.action('Add a column ' + name + '[' + type + '] to ' + table.address.substring(0, 10));
-  return table.addColumn(name, 1)
+  return table.addColumn({name: name, dataType: 1})
     .then(() => table.getMetadata())
     .then(meta => meta.columns)
-    .then(columns => columns.map(it => it.columnName))
+    .then(columns => columns.map(it => it.name))
     .then(columnNames => expect(columnNames).to.include(name));
 }
 
@@ -292,10 +292,10 @@ module.exports = {
       .then(t => table = t)
       .then(() => IndexFactory.new(table.address))
       .then((idxFactory) => table.setModule(modules.INDEX_FACTORY, idxFactory.address))
-      .then(() => table.initialize((null == store)?'0x0000000000000000000000000000000000000000':(store.address), tableName, keyColumnName, 1))
+      .then(() => table.initialize((null == store)?'0x0000000000000000000000000000000000000000':(store.address), tableName, { name: keyColumnName, dataType: 1 }))
       .then(() => table.getMetadata())
       .then(meta => meta.columns)
-      .then(columns => columns.map(it => it.columnName))
+      .then(columns => columns.map(it => it.name))
       .then(columnNames => expect(columnNames).to.include(keyColumnName))
       .then(() => table);
   },

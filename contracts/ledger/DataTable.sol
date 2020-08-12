@@ -52,14 +52,14 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     }
   }
 
-  function initialize(address _store, string memory _name, string memory _keyColumn, int _keyColumnType)
+  function initialize(address _store, string memory _name, table.Column memory _keyColumn)
   public override {
     store = _store;
     require(status == ST_CREATED, 'Already initialized');
     status = ST_INITIALIZING;
     name = _name;
-    keyColumn = _keyColumn;
-    addColumn(_keyColumn, _keyColumnType);
+    keyColumn = _keyColumn.name;
+    addColumn(_keyColumn);
     addIndex(name, keyColumn);
     require(status == ST_INITIALIZING);
     status = ST_AVAILABLE;
@@ -106,7 +106,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     require(success, 'fail to add constraint');
   }
 
-  function removeConstraint(address addrezz) public {
+  function dropConstraint(address addrezz) public {
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('removeConstraint(address)', addrezz));
     require(success, 'fail to remove constraint');
   }
@@ -114,12 +114,12 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   /*****************************/
   /* Column-related governance */
   /*****************************/
-  function addColumn(string memory _name, int256 _type) public {
-    (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('addColumn(string,int256)', _name, _type));
+  function addColumn(table.Column memory column) public {
+    (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('addColumn(string,int256)', column.name, column.dataType));
     require(success, 'fail to add a column');
   }
 
-  function removeColumn(string memory _name) public statusAvailable {
+  function dropColumn(string memory _name) public statusAvailable {
     (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('removeColumn(string)', _name));
     require(success, 'fail to remove a column');
   }
@@ -132,7 +132,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     require(success, 'fail to add a index');
   }
 
-  function removeIndex(string memory _name) public statusAvailable {
+  function dropIndex(string memory _name) public statusAvailable {
     (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('removeIndex(string)', _name));
     require(success, 'fail to remove a index');
   }
@@ -250,7 +250,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   returns (table.Row[] memory) {
     bool bFound = false;
     for (uint i = 0 ; i < Columns.length ; ++i) {
-      bFound = bFound || utils.equals(Columns[i].columnName, _column);
+      bFound = bFound || utils.equals(Columns[i].name, _column);
     }
     require(bFound, ERR_INVALID_COLUMN);
 

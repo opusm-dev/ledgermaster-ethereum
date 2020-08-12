@@ -12,12 +12,12 @@ library table {
     Index[] indices;
   }
   struct Column {
-    string columnName;
+    string name;
     /**
      * 1: string
      * 2: numeric
      */
-    int columnType;
+    int dataType;
   }
 
   struct Index {

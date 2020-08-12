@@ -22,11 +22,11 @@ contract DataTableColumns is DataTableState {
     require(validateColumn(_name, _type), 'Column is not valid');
     for (uint i = 0 ; i<Columns.length ; ++i) {
       // Check column name duplication
-      require(utils.notEquals(Columns[i].columnName, _name), ERR_DUPLICATED);
+      require(utils.notEquals(Columns[i].name, _name), ERR_DUPLICATED);
     }
     table.Column memory column = table.Column({
-      columnName: _name,
-      columnType: _type
+      name: _name,
+      dataType: _type
     });
     Columns.push(column);
   }
@@ -43,7 +43,7 @@ contract DataTableColumns is DataTableState {
     }
     for (uint i = 0 ; i < Columns.length ; ++i) {
       uint index = uint(i - deletionCount);
-      if (utils.equals(Columns[index].columnName, _name)) {
+      if (utils.equals(Columns[index].name, _name)) {
         Columns[index] = Columns[Columns.length - 1];
         Columns.pop();
         ++deletionCount;
