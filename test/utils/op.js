@@ -81,9 +81,9 @@ function addColumn(name, table) {
     .then(columnNames => expect(columnNames).to.include(name));
 }
 
-function removeColumn(name, table) {
+function dropColumn(name, table) {
   logger.action('Remove the column ' + name + ' from ' + table.address.substring(0, 10));
-  return table.removeColumn(name)
+  return table.dropColumn(name)
     .then(() => table.getMetadata())
     .then(meta => meta.columns)
     .then(columns => columns.map(it => it.columnName))
@@ -99,9 +99,9 @@ function addIndex(index, table) {
     .then(indices => expect(indices).to.deep.include(index));
 }
 
-function removeIndex(name, table) {
+function dropIndex(name, table) {
   logger.action('Remove the index ' + name + ' from ' + table.address.substring(0, 10));
-  return table.removeIndex(name)
+  return table.dropIndex(name)
     .then(() => table.getMetadata())
     .then(meta => meta.indices.map(it => it.indexName))
     .then(indexNames => expect(indexNames).to.not.include(name));
@@ -185,17 +185,17 @@ module.exports = {
     const table = arguments[0];
     return callRecursively(addColumn, 0, [].slice.call(arguments, 1), table);
   },
-  removeColumn: function() {
+  dropColumn: function() {
     const table = arguments[0];
-    return callRecursively(removeColumn, 0, [].slice.call(arguments, 1), table);
+    return callRecursively(dropColumn, 0, [].slice.call(arguments, 1), table);
   },
   addIndex: function() {
     const table = arguments[0];
     return callRecursively(addIndex, 0, [].slice.call(arguments, 1), table);
   },
-  removeIndex: function() {
+  dropIndex: function() {
     const table = arguments[0];
-    return callRecursively(removeIndex, 0, [].slice.call(arguments, 1), table);
+    return callRecursively(dropIndex, 0, [].slice.call(arguments, 1), table);
   },
 
   /* Row */

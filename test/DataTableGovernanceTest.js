@@ -1,6 +1,6 @@
 const { v4: uuid } = require('uuid');
 const logger = require('./utils/logger.js');
-const { createTable, addColumn, removeColumn, addIndex, removeIndex, addRow, updateRow, removeRow } = require('./utils/op.js');
+const { createTable, addColumn, dropColumn, addIndex, dropIndex, addRow, updateRow, removeRow } = require('./utils/op.js');
 
 const N_COLUMN = 6;
 const N_REPEAT = 3;
@@ -26,7 +26,7 @@ contract('DataTableGovernance', (accounts) => {
   it('test add / remove column', async () => {
     const columnNames = Array(N_COLUMN).fill().map(() => nameGen());
     await addColumn(table, ...columnNames);
-    await removeColumn(table, ...columnNames);
+    await dropColumn(table, ...columnNames);
   });
 
   it('test add / remove index', async () => {
@@ -44,8 +44,8 @@ contract('DataTableGovernance', (accounts) => {
 
     await addIndex(table, ...indices);
 
-    await removeIndex(table, ...indexNames);
+    await dropIndex(table, ...indexNames);
 
-    await removeColumn(table, ...columnNames);
+    await dropColumn(table, ...columnNames);
   });
 });

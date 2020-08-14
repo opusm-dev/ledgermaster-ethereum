@@ -1,5 +1,5 @@
 const { v4: uuid } = require('uuid');
-const { createTable, addColumn, removeColumn, addIndex, removeIndex, addRow, updateRow, removeRow } = require('./utils/op.js');
+const { createTable, addColumn, addIndex, addRow, updateRow, removeRow } = require('./utils/op.js');
 const logger = require('./utils/logger.js');
 
 const N_COLUMN = 6;
@@ -25,7 +25,7 @@ contract('DataTable', (accounts) => {
 
   it('get row', async() => {
     return table.add({names: [keyColumnName], values: ['0x176b615d4e826429504a18d6eb8a2eaba86e5de7']})
-      .then(() => table.findBy(keyColumnName, '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', 0, '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', 0, 0).then((it) => expect(it[0][2]).to.equal(true)));
+      .then(() => table.findBy(keyColumnName, { value: '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', boundType: 0 }, { value: '0x176b615d4e826429504a18d6eb8a2eaba86e5de7', boundType: 0 }, 0).then((it) => expect(it[0][2]).to.equal(true)));
   });
 
   it('test add / remove / update / findBy', async() => {
@@ -78,7 +78,7 @@ contract('DataTable', (accounts) => {
         expect(columnIndex).to.be.at.least(0, 'Row\'s ' + name + ': ' + row.toString());
         return row[1][columnIndex];
       }
-      return table.findBy(columnName, start, startType, end, endType, orderType)
+      return table.findBy(columnName, { value: start, boundType: startType }, { value: end, boundType: endType }, orderType)
         .then(list => {
           const values = list.map(row => getValue(row, columnName))
           function stringCompare(a, b) {
@@ -123,8 +123,8 @@ contract('DataTable', (accounts) => {
       .then(t => addColumn(t, 'parent')
         .then(() => t.addIndex('idx_parent', 'parent'))
         .then(() => addRow(t, { names: ['id', 'parent'], values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', ''], available: true }))
-        .then(() => t.findBy('id', 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 0))
-        .then(() => t.findBy('parent', 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', 0, 1)));
+        .then(() => t.findBy('id', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 0))
+        .then(() => t.findBy('parent', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 1)));
   });
 
 });

@@ -15,7 +15,6 @@ library table {
     string name;
     /**
      * 1: string
-     * 2: numeric
      */
     int dataType;
   }

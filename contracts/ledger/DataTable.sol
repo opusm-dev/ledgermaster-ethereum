@@ -35,6 +35,16 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   string private constant ERR_UPDATE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_UPDATE';
   string private constant ERR_DELETE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_DELETE';
 
+  struct ValuePoint {
+    string value;
+    /**
+     * -1: Unbound
+     * 0: Inclusion
+     * 1: Exclusion
+     */
+    int boundType;
+  }
+
   address[] Friends;
 
   modifier statusAvailable {
@@ -239,13 +249,12 @@ contract DataTable is DataTableState, Table, Controller, Modules {
    * -1 - unbound
    * 0 - Included bound
    * 1 - Excluded bound
-
    * _orderType
    * -1 : 내림차순 정렬
    * 0 : 정렬 없음
    * 1 : 오름차순 정렬
    */
-  function findBy(string memory _column, string memory _start, int _st, string memory _end, int _et, int _orderType)
+  function findBy(string memory _column, ValuePoint memory _start, ValuePoint memory _end, int _orderType)
   public view statusAvailable
   returns (table.Row[] memory) {
     bool bFound = false;
@@ -255,9 +264,9 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     require(bFound, ERR_INVALID_COLUMN);
 
     // Check if it is key and equals
-    if (0 == _st && 0 == _et && utils.equals(_start, _end) && utils.equals(_column, keyColumn)) {
+    if (0 == _start.boundType && 0 == _end.boundType && utils.equals(_start.value, _end.value) && utils.equals(_column, keyColumn)) {
       string[] memory keys = new string[](1);
-      keys[0] = _start;
+      keys[0] = _start.value;
       return getRows(keys, false);
     } else {
       // Check if column have index
@@ -266,14 +275,14 @@ contract DataTable is DataTableState, Table, Controller, Modules {
           // If index exists for column
           Index index = Index(Indices[i].addrezz);
           if (-1 == _orderType) {
-            return getRows(index.findBy(_start, _st, _end, _et), true);
+            return getRows(index.findBy(_start.value, _start.boundType, _end.value, _end.boundType), true);
           } else {
-            return getRows(index.findBy(_start, _st, _end, _et), false);
+            return getRows(index.findBy(_start.value, _start.boundType, _end.value, _end.boundType), false);
           }
         }
       }
 
-      return rowRepository().findBy(_column, _start, _st, _end, _et, _orderType);
+      return rowRepository().findBy(_column, _start.value, _start.boundType, _end.value, _end.boundType, _orderType);
     }
   }
 
