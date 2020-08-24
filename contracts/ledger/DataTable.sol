@@ -35,16 +35,6 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   string private constant ERR_UPDATE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_UPDATE';
   string private constant ERR_DELETE_CONSTRAINT = 'CONSTRAINT_VIOLATION_FOR_DELETE';
 
-  struct ValuePoint {
-    string value;
-    /**
-     * -1: Unbound
-     * 0: Inclusion
-     * 1: Exclusion
-     */
-    int boundType;
-  }
-
   address[] Friends;
 
   modifier statusAvailable {
@@ -62,7 +52,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     }
   }
 
-  function initialize(address _store, string memory _name, table.Column memory _keyColumn)
+  function initialize(address _store, string memory _name, ColumnInput memory _keyColumn)
   public override {
     store = _store;
     require(status == ST_CREATED, 'Already initialized');
@@ -70,7 +60,10 @@ contract DataTable is DataTableState, Table, Controller, Modules {
     name = _name;
     keyColumn = _keyColumn.name;
     addColumn(_keyColumn);
-    addIndex(name, keyColumn);
+    addIndex(IndexInput({
+      indexName: name,
+      columnName: keyColumn
+    }));
     require(status == ST_INITIALIZING);
     status = ST_AVAILABLE;
   }
@@ -86,8 +79,8 @@ contract DataTable is DataTableState, Table, Controller, Modules {
 
   function getMetadata()
   public view override
-  returns (table.TableMetadata memory) {
-    return table.TableMetadata({
+  returns (TableMetadata memory) {
+    return TableMetadata({
       name: name,
       keyColumn: keyColumn,
       location: address(this),
@@ -124,7 +117,7 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   /*****************************/
   /* Column-related governance */
   /*****************************/
-  function addColumn(table.Column memory column) public {
+  function addColumn(ColumnInput memory column) public {
     (bool success,) = getModule(PART_COLUMNS).delegatecall(abi.encodeWithSignature('addColumn(string,int256)', column.name, column.dataType));
     require(success, 'fail to add a column');
   }
@@ -137,8 +130,8 @@ contract DataTable is DataTableState, Table, Controller, Modules {
   /****************************/
   /* Index-related governance */
   /****************************/
-  function addIndex(string memory _name, string memory _column) public {
-    (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('addIndex(string,string)', _name, _column));
+  function addIndex(IndexInput memory index) public {
+    (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('addIndex(string,string)', index.indexName, index.columnName));
     require(success, 'fail to add a index');
   }
 

@@ -3,7 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import '../lib/system.sol';
 import '../lib/tab.sol';
-import '../Table.sol';
 import './DataTableState.sol';
 
 contract DataTableColumns is DataTableState {

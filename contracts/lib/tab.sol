@@ -4,13 +4,6 @@ pragma experimental ABIEncoderV2;
 import './system.sol';
 
 library table {
-  struct TableMetadata {
-    string name;
-    string keyColumn;
-    address location;
-    Column[] columns;
-    Index[] indices;
-  }
   struct Column {
     string name;
     /**
