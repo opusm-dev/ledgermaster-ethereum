@@ -126,5 +126,4 @@ contract('DataTable', (accounts) => {
         .then(() => t.findBy('id', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 0))
         .then(() => t.findBy('parent', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 1)));
   });
-
 });
