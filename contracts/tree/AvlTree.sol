@@ -53,7 +53,7 @@ contract AvlTree is Index, Tree, Controller, Modules {
     string memory start,
     int startType,
     string memory end,
-    int endType) public view returns (uint) {
+    int endType) public view override returns (uint) {
     require(address(0x0) != getModule(VISITOR), 'No Visitor');
     return Visitor(getModule(VISITOR)).countBy(getNodeRepository(), start, startType, end, endType);
   }

@@ -84,6 +84,20 @@ contract SimpleRowRepository is RowRepository {
     }
   }
 
+  function countBy(string memory _column, string memory _start, int _st, string memory _end, int _et)
+  public view override
+  returns (uint) {
+    table.Row[] memory _list = getAllRows();
+    uint n = 0;
+    for (uint i = 0 ; i<_list.length ; ++i) {
+      string memory value = getColumnValue(_list[i], _column);
+      if (utils.checkBound(_start, _st, _end, _et, value)) {
+        ++n;
+      }
+    }
+    return n;
+  }
+
   function filter(table.Row[] memory _list, string memory _column, string memory _start, int _st, string memory _end, int _et)
   private pure
   returns (table.Row[] memory) {

@@ -278,6 +278,36 @@ contract DataTable is DataTableState, Table, Controller, Modules {
       return rowRepository().findBy(_column, _start.value, _start.boundType, _end.value, _end.boundType, _orderType);
     }
   }
+  function countBy(string memory _column, ValuePoint memory _start, ValuePoint memory _end)
+  public view statusAvailable
+  returns (uint) {
+    bool bFound = false;
+    for (uint i = 0 ; i < Columns.length ; ++i) {
+      bFound = bFound || utils.equals(Columns[i].name, _column);
+    }
+    require(bFound, ERR_INVALID_COLUMN);
+
+    // Check if it is key and equals
+    if (0 == _start.boundType && 0 == _end.boundType && utils.equals(_start.value, _end.value) && utils.equals(_column, keyColumn)) {
+      if (getRow(_start.value).available) {
+        return 1;
+      } else {
+        return 0;
+      }
+    } else {
+      // Check if column have index
+      for (uint i = 0 ; i < Indices.length ; ++i) {
+        if (utils.equals(Indices[i].columnName, _column)) {
+          // If index exists for column
+          Index index = Index(Indices[i].addrezz);
+          return index.countBy(_start.value, _start.boundType, _end.value, _end.boundType);
+        }
+      }
+
+      return rowRepository().countBy(_column, _start.value, _start.boundType, _end.value, _end.boundType);
+    }
+  }
+
 
   /* Library */
   function getColumnValue(table.Row memory row, string memory columnName) internal pure returns (string memory) {
