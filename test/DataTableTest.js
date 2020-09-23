@@ -121,7 +121,7 @@ contract('DataTable', (accounts) => {
   it('case 1', () => {
     return createTable(null, 'certificate', 'id')
       .then(t => addColumn(t, 'parent')
-        .then(() => t.addIndex('idx_parent', 'parent'))
+        .then(() => addIndex(t, { name: 'idx_parent', column: 'parent' }))
         .then(() => addRow(t, { names: ['id', 'parent'], values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', ''], available: true }))
         .then(() => t.findBy('id', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 0))
         .then(() => t.findBy('parent', { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, { value: 'c2ceb24f-ea41-48f2-aca8-f59777ca5357', boundType: 0 }, 1)));

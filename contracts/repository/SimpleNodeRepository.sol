@@ -12,8 +12,7 @@ import '../proxy/Modules.sol';
 import '../lib/system.sol';
 import '../lib/tree.sol';
 
-contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
-{
+contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules {
   tree.Node DUMMY_NODE = tree.Node({
     kind: 0,
     key: '',
@@ -23,6 +22,7 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
     });
 
   mapping(string => tree.Node) private nodes;
+
   tree.Node private _root = tree.Node({
     kind: bytes1(0x00),
     key: '',
@@ -138,22 +138,16 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
     return s;
   }
 
-  function find(uint _finder, string memory _key)
-  public view override
-  returns (tree.Node[] memory) {
+  function find(uint _finder, string memory _key) public view override returns (tree.Node[] memory) {
     return PathFinder(getModule(_finder)).find(this, _key);
   }
 
-  function find(uint _finder, tree.Node memory _node, string memory _key)
-  public view override
-  returns (tree.Node[] memory) {
+  function find(uint _finder, tree.Node memory _node, string memory _key) public view override returns (tree.Node[] memory) {
     return PathFinder(getModule(_finder)).find(this, _node, _key);
   }
 
 
-  function details(tree.Node memory _node)
-  public view override
-  returns (tree.NodeDetails memory) {
+  function details(tree.Node memory _node) public view override returns (tree.NodeDetails memory) {
     if (tree.isAvailable(_node)) {
       tree.NodeDetails memory ld = details(left(_node));
       tree.NodeDetails memory rd = details(right(_node));
@@ -182,9 +176,7 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
     }
   }
 
-  function left(tree.Node memory _node)
-  public view override
-  returns (tree.Node memory) {
+  function left(tree.Node memory _node) public view override returns (tree.Node memory) {
     if (tree.hasLeft(_node)) {
       return nodes[_node.left];
     } else {
@@ -192,9 +184,7 @@ contract SimpleNodeRepository is NodeRepository, Controlled, Controller, Modules
     }
   }
 
-  function right(tree.Node memory _node)
-  public view override
-  returns (tree.Node memory) {
+  function right(tree.Node memory _node) public view override returns (tree.Node memory) {
     if (tree.hasRight(_node)) {
       return nodes[_node.right];
     } else {

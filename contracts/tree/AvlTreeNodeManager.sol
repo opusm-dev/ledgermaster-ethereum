@@ -72,8 +72,8 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
       return DUMMY_NODE;
     }
     emit NodeTraverseForRemove(_base, _key);
-    int comparision = utils.compare(node.key, _key);
-    if (comparision < 0) {
+    int comparison = utils.compare(node.key, _key);
+    if (comparison < 0) {
       tree.Node memory newRight = removeNode(repository, node.right, _key);
       if (!tree.isAvailable(newRight)) {
         node = tree.unlinkRight(node);
@@ -83,7 +83,7 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
         repository.set(node);
       }
       return node;
-    } else if (0 < comparision) {
+    } else if (0 < comparison) {
       tree.Node memory newLeft = removeNode(repository, node.left, _key);
       if (!tree.isAvailable(newLeft)) {
         node = tree.unlinkLeft(node);
@@ -93,7 +93,7 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
         repository.set(node);
       }
       return node;
-    } else if (0 == comparision) {
+    } else if (0 == comparison) {
       if (tree.hasLeft(node)) {
         if (tree.hasRight(node)) {
           tree.Node memory newNode = min(repository, repository.right(node));
@@ -105,13 +105,17 @@ contract AvlTreeNodeManager is NodeManager, Controller, Modules {
           repository.set(newNode);
           return newNode;
         } else {
-          return repository.left(node);
+          tree.Node memory left = repository.left(node);
+          repository.remove(_key);
+          return left;
         }
       } else {
         if (tree.hasRight(node)) {
-          return repository.right(node);
+          tree.Node memory right = repository.right(node);
+          repository.remove(_key);
+          return right;
         } else {
-          repository.remove(_base);
+          repository.remove(_key);
           return DUMMY_NODE;
         }
       }

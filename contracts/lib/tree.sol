@@ -6,7 +6,7 @@ import './system.sol';
 
 library tree {
   struct Node {
-    // 0: NotAvailable, 1: Right, 2: Left, 3: Both, 4: Leaf
+    // 0x00: NotAvailable, 0x05: Right, 0x09: Left, 0x0d: Both, 0x01: Leaf
     bytes1 kind;
     string key;
     string[] values;

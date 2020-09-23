@@ -10,5 +10,4 @@ contract('PSMLB-125', (accounts) => {
         .then(() => t.findBy('id', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0))
         .then((rows) => console.log('Promotions: ', rows)));
   });
-
 });

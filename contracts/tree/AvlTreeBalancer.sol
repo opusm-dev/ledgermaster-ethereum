@@ -80,9 +80,17 @@ contract AvlTreeBalancer is Balancer {
     if (tree.isAvailable(_node)) {
       if (tree.hasRight(_node)) {
         tree.Node memory pivot = repository.get(_node.right);
-        tree.Node memory right = tree.linkRight(_node, pivot.left);
-        pivot = tree.linkLeft(pivot, right.key);
-        repository.set(right);
+        if (tree.hasLeft(pivot)) {
+          tree.Node memory moving = repository.get(pivot.left);
+          _node = tree.unlinkRight(_node);
+          pivot = tree.unlinkLeft(pivot);
+          pivot = tree.linkLeft(pivot, _node.key);
+          _node = tree.linkRight(_node, moving.key);
+        } else {
+          _node = tree.unlinkRight(_node);
+          pivot = tree.linkLeft(pivot, _node.key);
+        }
+        repository.set(_node);
         repository.set(pivot);
         return pivot;
       } else {
@@ -97,10 +105,18 @@ contract AvlTreeBalancer is Balancer {
     if (tree.isAvailable(_node)) {
       if (tree.hasLeft(_node)) {
         tree.Node memory pivot = repository.get(_node.left);
-        tree.Node memory left = tree.linkLeft(_node, pivot.right);
-        pivot = tree.linkRight(pivot, left.key);
+        if (tree.hasRight(pivot)) {
+          tree.Node memory moving = repository.get(pivot.right);
+          _node = tree.unlinkLeft(_node);
+          pivot = tree.unlinkRight(pivot);
+          pivot = tree.linkRight(pivot, _node.key);
+          _node = tree.linkLeft(_node, moving.key);
+        } else {
+          _node = tree.unlinkLeft(_node);
+          pivot = tree.linkRight(pivot, _node.key);
+        }
+        repository.set(_node);
         repository.set(pivot);
-        repository.set(left);
         return pivot;
       } else {
         return DUMMY_NODE;

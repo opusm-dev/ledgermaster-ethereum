@@ -92,7 +92,7 @@ function dropColumn(name, table) {
 
 function addIndex(index, table) {
   logger.action('Add an index ' + index.name + '[' + index.column + '] from ' + table.address.substring(0, 10));
-  return table.addIndex(index.name, index.column)
+  return table.addIndex({indexName: index.name, columnName: index.column})
     .then(() => table.getMetadata())
     .then(meta => meta.indices)
     .then(indices => indices.map(it => ({name: it.indexName, column: it.columnName})))
