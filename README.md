@@ -31,7 +31,7 @@
 # Test
 ## Using ganache
 ```console
- $ ganache-cli
+ $ ganache-cli --gasLimit 0xfffffffffff
  $ truffle test
 ```
 

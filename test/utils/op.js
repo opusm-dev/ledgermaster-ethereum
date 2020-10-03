@@ -3,20 +3,103 @@ const { v4: uuid } = require('uuid');
 const logger = require('./logger.js');
 const modules = require('./modules.js');
 
+const ModuleController = artifacts.require('ModuleController');
+const StringComparator = artifacts.require('StringComparator');
+const IntegerComparator = artifacts.require('IntegerComparator');
+const MinimumFinder = artifacts.require('MinimumFinder');
+const NodeFinder = artifacts.require('NodeFinder');
+
+const AvlTreeBalancer = artifacts.require('AvlTreeBalancer');
+const AvlTreeVisitor = artifacts.require('AvlTreeVisitor');
+const DataTableVisitor = artifacts.require('DataTableVisitor');
+const AvlTreeManager = artifacts.require('AvlTreeManager');
 const DataTableColumns = artifacts.require('DataTableColumns');
 const DataTableIndices = artifacts.require('DataTableIndices');
 const DataTableConstraints = artifacts.require('DataTableConstraints');
-const DataTable = artifacts.require('DataTable');
-const SimpleRowRepository = artifacts.require('SimpleRowRepository');
+
 const SimpleNodeRepositoryFactory = artifacts.require('SimpleNodeRepositoryFactory');
-const AvlTree = artifacts.require('AvlTree');
-const SimpleNodeRepository = artifacts.require('SimpleNodeRepository');
-const MinimumFinder = artifacts.require('MinimumFinder');
-const NodeFinder = artifacts.require('NodeFinder');
-const AvlTreeBalancer = artifacts.require('AvlTreeBalancer');
-const AvlTreeVisitor = artifacts.require('AvlTreeVisitor');
-const AvlTreeNodeManager = artifacts.require("AvlTreeNodeManager");
 const IndexFactory = artifacts.require('IndexFactory');
+const DataTableFactory = artifacts.require('DataTableFactory');
+
+const DataTableStore = artifacts.require('DataTableStore');
+const DataTable = artifacts.require('DataTable');
+const SimpleNodeRepository = artifacts.require('SimpleNodeRepository');
+const SimpleRowRepository = artifacts.require('SimpleRowRepository');
+const AvlTree = artifacts.require('AvlTree');
+
+async function configureController(controller) {
+  await controller.setModule(modules.STRING_COMPARATOR, (await StringComparator.deployed()).address);
+  await controller.setModule(modules.INTEGER_COMPARATOR, (await IntegerComparator.deployed()).address);
+  /* Index part */
+  await controller.setModule(modules.MIN_FINDER, (await MinimumFinder.deployed()).address);
+  await controller.setModule(modules.NODE_FINDER, (await NodeFinder.deployed()).address);
+  await controller.setModule(modules.NODE_REPOSITORY_FACTORY, (await SimpleNodeRepositoryFactory.deployed()).address);
+
+  await controller.setModule(modules.INDEX_FACTORY, (await IndexFactory.deployed()).address);
+  await controller.setModule(modules.BALANCER, (await AvlTreeBalancer.deployed()).address);
+  await controller.setModule(modules.VISITOR, (await AvlTreeVisitor.deployed()).address);
+  await controller.setModule(modules.TABLE_VISITOR, (await DataTableVisitor.deployed()).address);
+  await controller.setModule(modules.MANAGER, (await AvlTreeManager.deployed()).address);
+
+  /* Table part */
+  await controller.setModule(modules.TABLE_COLUMNS, (await DataTableColumns.deployed()).address);
+  await controller.setModule(modules.TABLE_CONSTRAINTS, (await DataTableConstraints.deployed()).address);
+  await controller.setModule(modules.TABLE_INDICES, (await DataTableIndices.deployed()).address);
+}
+
+async function globalController() {
+  return await ModuleController.deployed();
+}
+async function createStore() {
+  return await globalController().then(it => DataTableStore.new(it.address));
+}
+
+async function createTree(account, dataType) {
+  const controller = await globalController();
+  const indexFactory = await getIndexFactory();
+  const tx = await indexFactory.create(controller.address, account);
+  const log = tx.receipt.logs.filter(log => log.event == 'NewIndex')[0];
+  const tree = await AvlTree.at(log.args['addrezz']);
+  const c = await ModuleController.at(await tree.controller());
+  if (2 == dataType) {
+    c.setModule(modules.COMPARATOR, (await IntegerComparator.deployed()).address);
+  } else {
+    c.setModule(modules.COMPARATOR, (await StringComparator.deployed()).address);
+  }
+
+  const repository = await SimpleNodeRepository.at(await tree.getModule(modules.NODE_REPO));
+  return { tree, repository };
+}
+
+async function createController() {
+  const controller = await ModuleController.new();
+  await configureController(controller);
+  return controller;
+}
+
+async function createTable(store, tableName, keyColumnName) {
+  const type = 1;
+  const controller = await globalController();
+  const table = await DataTable.new(controller.address);
+  const rowRepository = await SimpleRowRepository.new(controller.address);
+  await controller.setModule(modules.ROW_REPOSITORY, rowRepository.address);
+  const storeAddress = (null == store)?'0x0000000000000000000000000000000000000000':(store.address);
+  await table.initialize(storeAddress, tableName, keyColumnName, 1);
+  const metadata = await table.getMetadata();
+  const columnNames = metadata.columns.map(it => it.name);
+  expect(columnNames).to.include(keyColumnName);
+  return table;
+}
+
+async function getIndexFactory() {
+  return IndexFactory.at(await globalController().then(it => it.getModule(modules.INDEX_FACTORY)));
+}
+async function getStringComparator() {
+  return StringComparator.at(await globalController().then(it => it.getModule(modules.STRING_COMPARATOR)));
+}
+async function getNodeFinder() {
+  return NodeFinder.at(await globalController().then(it => it.getModule(modules.NODE_FINDER)));
+}
 
 function addNodeValue(value, tree) {
   logger.action('Add ' + value + ' to ' + tree.address.substring(0, 10));
@@ -71,14 +154,13 @@ function deregisterTable(name, ts) {
     .then(names => expect(names).to.not.include(name));
 }
 
-function addColumn(name, table) {
-  const type = 1;
-  logger.action('Add a column ' + name + '[' + type + '] to ' + table.address.substring(0, 10));
-  return table.addColumn({name: name, dataType: 1})
+function addColumn(column, table) {
+  logger.action('Add a column ' + column.name + '[' + column.type + '] to ' + table.address.substring(0, 10));
+  return table.addColumn({name: column.name, dataType: column.type})
     .then(() => table.getMetadata())
     .then(meta => meta.columns)
     .then(columns => columns.map(it => it.name))
-    .then(columnNames => expect(columnNames).to.include(name));
+    .then(columnNames => expect(columnNames).to.include(column.name));
 }
 
 function dropColumn(name, table) {
@@ -161,6 +243,8 @@ function callRecursively() {
   }
 }
 
+
+
 module.exports = {
   /* Avl tree */
   addNodeValue: function() {
@@ -211,96 +295,31 @@ module.exports = {
     const table = arguments[0];
     return callRecursively(removeRow, 0, [].slice.call(arguments, 1), table);
   },
-  createTree: function() {
-    return Promise.all([
-      AvlTree.new(),
-      SimpleNodeRepository.new(),
-      MinimumFinder.deployed(),
-      NodeFinder.deployed(),
-      AvlTreeBalancer.deployed(),
-      AvlTreeVisitor.deployed(),
-      AvlTreeNodeManager.deployed()
-    ]).then(values => {
-      const tree = values[0];
-      const repository = values[1];
-      const minFinder = values[2];
-      const nodeFinder = values[3];
-      const balancer = values[4];
-      const visitor = values[5];
-      const manager = values[6];
-
-    return repository.setModule(modules.MIN_FINDER, minFinder.address)
-      .then(() => repository.setModule(modules.NODE_FINDER, nodeFinder.address))
-      .then(() => tree.setModule(modules.BALANCER, balancer.address))
-      .then(() => tree.setModule(modules.VISITOR, visitor.address))
-      .then(() => tree.setModule(modules.MANAGER, manager.address))
-      .then(() => tree.setModule(modules.NODE_REPO, repository.address))
-      .then(() => ({ tree, repository, minFinder, nodeFinder, balancer, visitor, manager }));
-   });
+  getStringComparator: async function() {
+    return StringComparator.at(await globalController().then(it => it.getModule(modules.COMPARATOR)));
   },
-  createTreeFromFactory: function() {
-    let tree;
-    return AvlTreeFactory.new()
-      .then(factory => {
-        const key = uuid();
-        factory.create(key);
-        return factory.get(key);
-      })
-      .then(address => AvlTree.at(address))
-      .then(tree => configure(tree))
+  getMinimumFinder: async function() {
+    return MinimumFinder.at(await globalController().then(it => it.getModule(modules.MIN_FINDER)));
   },
-
-  createTable: function(store, tableName, keyColumnName) {
-    const type = 1;
-    let table;
-    return Promise.all([
-      DataTableColumns.deployed(),
-      DataTableIndices.deployed(),
-      DataTableConstraints.deployed(),
-      DataTable.new(),
-      SimpleRowRepository.new(),
-      SimpleNodeRepositoryFactory.new(),
-      MinimumFinder.deployed(),
-      NodeFinder.deployed(),
-      AvlTreeBalancer.deployed(),
-      AvlTreeVisitor.deployed(),
-      AvlTreeNodeManager.deployed()])
-      .then((values) => {
-        const tableColumns = values[0];
-        const tableIndices = values[1];
-        const tableConstraints = values[2];
-        const table = values[3];
-        const rowRepository = values[4]
-        const repositoryFactory = values[5];
-        const minFinder = values[6];
-        const nodeFinder = values[7];
-        const balancer = values[8];
-        const visitor = values[9];
-        const manager = values[10];
-        return table.setModule(modules.TABLE_COLUMNS, tableColumns.address)
-          .then(() => table.setModule(modules.TABLE_INDICES, tableIndices.address))
-          .then(() => table.setModule(modules.TABLE_CONSTRAINTS, tableConstraints.address))
-          .then(() => table.setModule(modules.NODE_REPOSITORY_FACTORY, repositoryFactory.address))
-          .then(() => table.setModule(modules.ROW_REPOSITORY, rowRepository.address))
-          .then(() => table.setModule(modules.MIN_FINDER, minFinder.address))
-          .then(() => table.setModule(modules.NODE_FINDER, nodeFinder.address))
-          .then(() => table.setModule(modules.BALANCER, balancer.address))
-          .then(() => table.setModule(modules.VISITOR, visitor.address))
-          .then(() => table.setModule(modules.MANAGER, manager.address))
-          .then(() => table)
-      })
-      .then(t => table = t)
-      .then(() => IndexFactory.new(table.address))
-      .then((idxFactory) => table.setModule(modules.INDEX_FACTORY, idxFactory.address))
-      .then(() => table.initialize((null == store)?'0x0000000000000000000000000000000000000000':(store.address), tableName, { name: keyColumnName, dataType: 1 }))
-      .then(() => table.getMetadata())
-      .then(meta => meta.columns)
-      .then(columns => columns.map(it => it.name))
-      .then(columnNames => expect(columnNames).to.include(keyColumnName))
-      .then(() => table);
+  getNodeFinder: async function() {
+    return NodeFinder.at(await ModuleController.deployed().then(it => it.getModule(modules.NODE_FINDER)));
   },
-  checkPath: function(finder, target, repository) {
-    return finder.find(repository, target.toString())
+  getAvlTreeVisitor: async function() {
+    return AvlTreeVisitor.at(await globalController().then(it => it.getModule(modules.VISITOR)));
+  },
+  getAvlTreeManager: async function() {
+    return AvlTreeManager.at(await globalController().then(it => it.getModule(modules.MANAGER)));
+  },
+  globalController,
+  getNodeFinder,
+  getStringComparator,
+  getIndexFactory: getIndexFactory,
+  createController,
+  createStore,
+  createTable,
+  createTree,
+  checkPath: function(finder, comparator, target, repository) {
+    return finder.find(repository, comparator.address, target.toString())
       .then((it) => it.map(n => n.key));
   }
 };

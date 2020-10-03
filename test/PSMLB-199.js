@@ -7,7 +7,7 @@ contract('PSMLB-199', (accounts) => {
   let tree;
   let visitor;
   beforeEach('', () => {
-    return createTree()
+    return createTree(accounts[0])
       .then(all => {
         tree = all.tree;
         repository = all.repository;
