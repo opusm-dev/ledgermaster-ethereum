@@ -128,27 +128,9 @@ contract DataTable is DataTableState, Table, Controlled {
   function addIndex(IndexInput memory index) public {
     (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('addIndex(string,(string,uint256))', index.indexName, getColumn(index.columnName)));
     require(success, 'fail to add a index');
-//    addIndex2(index.indexName, getColumn(index.columnName));
   }
 
-  function addIndex2(string memory _name, TableColumn memory _column) public {
-    require((status == ST_AVAILABLE) || (status == ST_INITIALIZING), 'Status must be ST_AVAILABLE or ST_INITIALIZING');
-    // Add index
-    for (uint i = 0 ; i<Indices.length ; ++i) {
-      // Check index name duplication
-      require(StringUtils.notEquals(Indices[i].indexName, _name), ERR_DUPLICATED);
-      // Check column duplication
-      require(StringUtils.notEquals(Indices[i].columnName, _column.name), ERR_INDEXED_COLUMN);
-    }
-    address indexAddress = createModule(INDEX_FACTORY);
-    Controlled controlled = Controlled(indexAddress);
-    address comparator = controlled.getModule(COMPARATOR + _column.dataType);
-    controlled.controller().setModule(COMPARATOR, comparator);
-    TableIndex memory tableIndex = TableIndex({ indexName: _name, columnName: _column.name, addrezz: indexAddress });
-    Indices.push(tableIndex);
-  }
-/*
-
+  /*
   function dropIndex(string memory _name) public statusAvailable {
     (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('removeIndex(string)', _name));
     require(success, 'fail to remove a index');
@@ -241,7 +223,7 @@ contract DataTable is DataTableState, Table, Controlled {
     RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
   }
 
-  function getRow(string memory key) public view statusAvailable returns (TableRow memory) {
+  function getRow(string memory key) public view override statusAvailable returns (TableRow memory) {
     return RowRepository(getModule(ROW_REPOSITORY)).get(key);
   }
 
@@ -256,7 +238,7 @@ contract DataTable is DataTableState, Table, Controlled {
    * 1 : 오름차순 정렬
    */
   function findBy(string calldata _column, ValuePoint calldata _start, ValuePoint calldata _end, int _orderType)
-  external view statusAvailable
+  external view override statusAvailable
   returns (TableRow[] memory) {
     TableVisitor visitor = TableVisitor(getModule(TABLE_VISITOR));
     return visitor.findBy(this, _column, _start, _end, _orderType);

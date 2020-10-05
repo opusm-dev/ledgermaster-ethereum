@@ -1,10 +1,13 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
+import '../common/ValuePoint.sol';
+
 /* Utilities */
 import './TableColumn.sol';
 import './TableIndex.sol';
 import './TableMetadata.sol';
+import './TableRow.sol';
 
 interface Table {
   struct ColumnInput {
@@ -21,4 +24,6 @@ interface Table {
   function getStore() external returns (address);
   function setStatus(int status) external;
   function getMetadata() external view returns (TableMetadata memory);
+  function getRow(string calldata key) external view returns (TableRow memory);
+  function findBy(string calldata _column, ValuePoint calldata _start, ValuePoint calldata _end, int _orderType) external view returns (TableRow[] memory);
 }
