@@ -24,9 +24,9 @@ contract DataTableVisitor is TableVisitor, Controlled {
   function findBy(Table table, string memory columnName, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (TableRow[] memory) {
     TableMetadata memory meta = table.getMetadata();
     TableColumn memory column = getColumn(meta, columnName);
+    RowRepository rowRepository = RowRepository(meta.rowRepository);
     Comparator comparator = Comparator(getModule(COMPARATOR + column.dataType));
 
-    RowRepository rowRepository = RowRepository(meta.rowRepository);
     // Check if it is key and equals
     if (StringUtils.equals(columnName, meta.keyColumn) && ValuePointUtils.checkPoint(comparator, _start, _end)) {
       string[] memory keys = new string[](1);

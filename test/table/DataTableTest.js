@@ -48,9 +48,16 @@ contract('DataTableTest', (accounts) => {
     expect(children.length).to.eq(0);
   });
 
+  it('#findBy: all row', async () => {
+    const keyColumnValue = uuid();
+    await addRow(table, { names: [keyColumnName], values: [keyColumnValue] });
+    const children = await table.findBy(keyColumnName, { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0);
+    expect(children.length).to.eq(1);
+  });
+
   it ('#findBy: sort by string / integer', async () => {
-    await addColumn(table, {name: 'string_column', type: 1})
-    await addColumn(table, {name: 'integer_column', type: 2})
+    await addColumn(table, { name: 'string_column', type: 1 })
+    await addColumn(table, { name: 'integer_column', type: 2 })
     await addIndex(table, { name: 'idx_string', column: 'string_column' })
     await addIndex(table, { name: 'idx_integer', column: 'integer_column' })
     const names = [keyColumnName, 'string_column', 'integer_column'];
@@ -68,7 +75,7 @@ contract('DataTableTest', (accounts) => {
 
     const integerSorted = await table.findBy('integer_column', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 1);
     for (let i = 0 ; i < integerSorted.length - 1 ; ++i) {
-      expect(integerSorted[i][1][2].toNumber() < integerSorted[i+1][1][2].toNumber()).to.eq(true);
+      expect(parseInt(integerSorted[i][1][2]) < parseInt(integerSorted[i+1][1][2])).to.eq(true);
     }
   });
 

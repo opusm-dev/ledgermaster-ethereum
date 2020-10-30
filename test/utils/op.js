@@ -77,11 +77,16 @@ async function createController() {
   return controller;
 }
 
+async function createRowRepository() {
+  const controller = await globalController();
+  return await SimpleRowRepository.new(controller.address);
+}
+
 async function createTable(store, tableName, keyColumnName) {
   const type = 1;
   const controller = await globalController();
   const table = await DataTable.new(controller.address);
-  const rowRepository = await SimpleRowRepository.new(controller.address);
+  const rowRepository = await createRowRepository();
   await controller.setModule(modules.ROW_REPOSITORY, rowRepository.address);
   const storeAddress = (null == store)?'0x0000000000000000000000000000000000000000':(store.address);
   await table.initialize(storeAddress, tableName, keyColumnName, 1);
@@ -90,6 +95,7 @@ async function createTable(store, tableName, keyColumnName) {
   expect(columnNames).to.include(keyColumnName);
   return table;
 }
+
 
 async function getIndexFactory() {
   return IndexFactory.at(await globalController().then(it => it.getModule(modules.INDEX_FACTORY)));
@@ -318,6 +324,7 @@ module.exports = {
   createStore,
   createTable,
   createTree,
+  createRowRepository,
   checkPath: function(finder, comparator, target, repository) {
     return finder.find(repository, comparator.address, target.toString())
       .then((it) => it.map(n => n.key));
