@@ -9,17 +9,18 @@ import '../table/Table.sol';
 import '../table/TableRow.sol';
 
 contract UniqueConstraint is Constraint {
-  string uniqueColumn;
-  constructor(string memory column) public {
-    uniqueColumn = column;
+  uint uniqueColumnIndex;
+  constructor(uint index) public {
+    uniqueColumnIndex = index;
   }
   function checkInsert(address sender, address, TableRow memory row) public view override returns (bool) {
     Table table = Table(sender);
     ValuePoint memory vp = ValuePoint({
-      value: getValue(row, uniqueColumn),
+      value: row.values[uniqueColumnIndex],
       boundType: 0
     });
-    TableRow[] memory rows = table.findBy(uniqueColumn, vp, vp, 0);
+    string memory uniqueColumnName = table.getMetadata().columns[uniqueColumnIndex].name;
+    TableRow[] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
     return rows.length == 0;
   }
 
@@ -30,19 +31,11 @@ contract UniqueConstraint is Constraint {
   function checkUpdate(address sender, address, TableRow memory, TableRow memory newRow) public override view returns (bool) {
     Table table = Table(sender);
     ValuePoint memory vp = ValuePoint({
-      value: getValue(newRow, uniqueColumn),
+      value: newRow.values[uniqueColumnIndex],
       boundType: 0
     });
-    TableRow[] memory rows = table.findBy(uniqueColumn, vp, vp, 0);
+    string memory uniqueColumnName = table.getMetadata().columns[uniqueColumnIndex].name;
+    TableRow[] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
     return rows.length == 0;
-  }
-
-  function getValue(TableRow memory row, string memory columnName) private pure returns (string memory) {
-    for (uint i = 0 ; i < row.names.length ; ++i) {
-      if (StringUtils.equals(row.names[i], columnName)) {
-        return row.values[i];
-      }
-    }
-    return '';
   }
 }
