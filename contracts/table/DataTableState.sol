@@ -14,7 +14,6 @@ contract DataTableState {
 
   address store;
   string name;
-  string keyColumn;
   address[] public Constraints;
   TableColumn[] public Columns;
   TableIndex[] Indices;

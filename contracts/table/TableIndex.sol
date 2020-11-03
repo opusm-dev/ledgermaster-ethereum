@@ -3,6 +3,6 @@ pragma experimental ABIEncoderV2;
 
 struct TableIndex {
   string indexName;
-  string columnName;
+  uint columnIndex;
   address addrezz;
 }

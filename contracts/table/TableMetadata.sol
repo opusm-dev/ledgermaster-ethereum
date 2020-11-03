@@ -6,7 +6,6 @@ import './TableIndex.sol';
 
 struct TableMetadata {
   string name;
-  string keyColumn;
   address location;
   TableColumn[] columns;
   TableIndex[] indices;

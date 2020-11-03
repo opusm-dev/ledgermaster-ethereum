@@ -21,21 +21,21 @@ contract DataTableVisitor is TableVisitor, Controlled {
 
   constructor(address _controller) Controlled(_controller) public { }
 
-  function findBy(Table table, string memory columnName, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (TableRow[] memory) {
+  function findBy(Table table, uint columnIndex, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (TableRow[] memory) {
     TableMetadata memory meta = table.getMetadata();
-    TableColumn memory column = getColumn(meta, columnName);
+    TableColumn memory column = meta.columns[columnIndex];
     RowRepository rowRepository = RowRepository(meta.rowRepository);
     Comparator comparator = Comparator(getModule(COMPARATOR + column.dataType));
 
     // Check if it is key and equals
-    if (StringUtils.equals(columnName, meta.keyColumn) && ValuePointUtils.checkPoint(comparator, _start, _end)) {
+    if (columnIndex == 0 && ValuePointUtils.checkPoint(comparator, _start, _end)) {
       string[] memory keys = new string[](1);
       keys[0] = _start.value;
       return rowRepository.get(keys, false);
     } else {
       // Check if column have index
       for (uint i = 0 ; i < meta.indices.length ; ++i) {
-        if (StringUtils.equals(meta.indices[i].columnName, columnName)) {
+        if (meta.indices[i].columnIndex == columnIndex) {
           // If index exists for column
           Index index = Index(meta.indices[i].addrezz);
           if (-1 == _orderType) {
@@ -50,14 +50,16 @@ contract DataTableVisitor is TableVisitor, Controlled {
     }
   }
 
-  function countBy(Table table, string memory columnName, ValuePoint memory _start, ValuePoint memory _end) public view override returns (uint) {
+  function countBy(Table table, uint columnIndex, ValuePoint memory _start, ValuePoint memory _end) public view override returns (uint) {
     TableMetadata memory meta = table.getMetadata();
-    TableColumn memory column = getColumn(meta, columnName);
+    TableColumn memory column = meta.columns[columnIndex];
+    RowRepository rowRepository = RowRepository(meta.rowRepository);
     Comparator comparator = Comparator(getModule(COMPARATOR + column.dataType));
 
-    RowRepository rowRepository = RowRepository(meta.rowRepository);
     // Check if it is key and equals
-    if (StringUtils.equals(columnName, meta.keyColumn) && ValuePointUtils.checkPoint(comparator, _start, _end)) {
+    if (_start.boundType == -1 && _end.boundType == -1) {
+      return rowRepository.size();
+    } else if (columnIndex == 0 && ValuePointUtils.checkPoint(comparator, _start, _end)) {
       if (rowRepository.get(_start.value).available) {
         return 1;
       } else {
@@ -66,7 +68,7 @@ contract DataTableVisitor is TableVisitor, Controlled {
     } else {
       // Check if column have index
       for (uint i = 0 ; i < meta.indices.length ; ++i) {
-        if (StringUtils.equals(meta.indices[i].columnName, columnName)) {
+        if (meta.indices[i].columnIndex == columnIndex) {
           // If index exists for column
           Index index = Index(meta.indices[i].addrezz);
           return index.countBy(_start, _end);
@@ -75,14 +77,5 @@ contract DataTableVisitor is TableVisitor, Controlled {
 
       return rowRepository.countBy(column, _start, _end);
     }
-  }
-
-  function getColumn(TableMetadata memory meta, string memory columnName) public pure returns (TableColumn memory) {
-    for (uint i = 0 ; i < meta.columns.length ; ++i) {
-      if (StringUtils.equals(meta.columns[i].name, columnName)) {
-        return meta.columns[i];
-      }
-    }
-    require(false, ERR_INVALID_COLUMN);
   }
 }

@@ -14,7 +14,7 @@ contract('PSMLB-125', (accounts) => {
   });
 
   it('simple', async () => {
-    await addRow(table, { names: ['id', 'address'], values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', 'aaa'], available: true });
+    await addRow(table, { values: ['c2ceb24f-ea41-48f2-aca8-f59777ca5357', 'aaa'], available: true });
     const s = await repository.size();
     expect(s.toNumber()).to.eq(1);
     const rows = await table.findBy('id', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0);

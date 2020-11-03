@@ -28,35 +28,11 @@ contract DataTableColumns is DataTableState, Controlled {
       require(StringUtils.notEquals(Columns[i].name, _name), ERR_DUPLICATED);
     }
     TableColumn memory column = TableColumn({
+      index: Columns.length,
       name: _name,
       dataType: _type
     });
     Columns.push(column);
-  }
-
-  function removeColumn(string memory _name) public {
-    require(status == ST_AVAILABLE, ERR_ST_AVAILABLE);
-    uint deletionCount = 0;
-    uint beforeColumns = Columns.length;
-    // 키 칼럼은 삭제할 수 없다.
-    require(StringUtils.notEquals(keyColumn, _name), 'Should not remove key column');
-    // 인덱스가 있으면 삭제할 수 없다.
-    for (uint i = 0 ; i<Indices.length ; ++i ) {
-      require(StringUtils.notEquals(Indices[i].columnName, _name), ERR_INDEXED_COLUMN);
-    }
-    for (uint i = 0 ; i < Columns.length ; ++i) {
-      uint index = uint(i - deletionCount);
-      if (StringUtils.equals(Columns[index].name, _name)) {
-        Columns[index] = Columns[Columns.length - 1];
-        Columns.pop();
-        ++deletionCount;
-        --i;
-      }
-    }
-    // Check if column deleted
-    require(1 == deletionCount, ERR_NO_DATA);
-    // Check if column size decreased
-    require(beforeColumns - deletionCount == Columns.length, ERR_ILLEGAL);
   }
 
   function validateColumnName(string memory _name) internal pure returns (bool) {

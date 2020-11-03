@@ -7,6 +7,6 @@ import './Table.sol';
 import '../common/ValuePoint.sol';
 
 interface TableVisitor {
-  function findBy(Table table, string calldata columnName, ValuePoint calldata _start, ValuePoint calldata _end, int _orderType) external view returns (TableRow[] memory);
-  function countBy(Table table, string calldata columnName, ValuePoint calldata _start, ValuePoint calldata _end) external view returns (uint);
+  function findBy(Table table, uint columnIndex, ValuePoint calldata _start, ValuePoint calldata _end, int _orderType) external view returns (TableRow[] memory);
+  function countBy(Table table, uint columnIndex, ValuePoint calldata _start, ValuePoint calldata _end) external view returns (uint);
 }

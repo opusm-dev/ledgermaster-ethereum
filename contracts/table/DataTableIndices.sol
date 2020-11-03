@@ -16,20 +16,21 @@ contract DataTableIndices is DataTableState, Controlled {
 
   constructor(address _controller) Controlled(_controller) public { }
 
-  function addIndex(string memory _name, TableColumn memory _column) public {
+  function addIndex(string memory _name, uint _columnIndex) public {
     require((status == ST_AVAILABLE) || (status == ST_INITIALIZING), 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     // Add index
     for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication
       require(StringUtils.notEquals(Indices[i].indexName, _name), ERR_DUPLICATED);
       // Check column duplication
-      require(StringUtils.notEquals(Indices[i].columnName, _column.name), ERR_INDEXED_COLUMN);
+      require(Indices[i].columnIndex != _columnIndex, ERR_INDEXED_COLUMN);
     }
     address indexAddress = createModule(INDEX_FACTORY);
     Controlled controlled = Controlled(indexAddress);
+    TableColumn memory _column = Columns[_columnIndex];
     address comparator = controlled.getModule(COMPARATOR + _column.dataType);
     controlled.controller().setModule(COMPARATOR, comparator);
-    TableIndex memory tableIndex = TableIndex({ indexName: _name, columnName: _column.name, addrezz: indexAddress });
+    TableIndex memory tableIndex = TableIndex({ indexName: _name, columnIndex: _columnIndex, addrezz: indexAddress });
     Indices.push(tableIndex);
   }
 

@@ -16,7 +16,6 @@ contract SimpleRowRepository is Controlled, RowRepository {
   string private constant ERR_NO_ROW = 'NO_ROW';
 
   TableRow DUMMY_ROW = TableRow({
-    names: new string[](0),
     values: new string[](0),
     available: false
   });
@@ -72,7 +71,6 @@ contract SimpleRowRepository is Controlled, RowRepository {
     }
     Rows[key] = RowNode({
       row: TableRow({
-        names: row.names,
         values: row.values,
         available: true
       }),
@@ -119,7 +117,7 @@ contract SimpleRowRepository is Controlled, RowRepository {
     uint n = 0;
     Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
     for (uint i = 0 ; i<_list.length ; ++i) {
-      string memory value = getColumnValue(_list[i], _column.name);
+      string memory value = _list[i].values[_column.index];
       if (ValuePointUtils.checkBound(comparator, _start, _end, value)) {
         ++n;
       }
@@ -132,7 +130,7 @@ contract SimpleRowRepository is Controlled, RowRepository {
     bool[] memory accepts = new bool[](_list.length);
     Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
     for (uint i = 0 ; i<_list.length ; ++i) {
-      string memory value = getColumnValue(_list[i], _column.name);
+      string memory value = _list[i].values[_column.index];
       if (ValuePointUtils.checkBound(comparator, _start, _end, value)) {
         accepts[i] = true;
         ++n;
@@ -160,11 +158,11 @@ contract SimpleRowRepository is Controlled, RowRepository {
     uint bandStart = _start;
     uint bandEnd = _start;
     uint i = _start + 1;
-    string memory bandValue = getColumnValue(_list[bandStart], _column.name);
+    string memory bandValue = _list[bandStart].values[_column.index];
 
     Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
     while (i < _end) {
-      string memory v = getColumnValue(_list[i], _column.name);
+      string memory v = _list[i].values[_column.index];
       int comparison = comparator.compare(bandValue, v);
       if (0 == comparison) {
         ++bandEnd;
@@ -190,16 +188,6 @@ contract SimpleRowRepository is Controlled, RowRepository {
       _list[_list.length - i - 1] = temp;
     }
     return _list;
-  }
-
-  /* Library */
-  function getColumnValue(TableRow memory row, string memory columnName) internal pure returns (string memory) {
-    for (uint i = 0 ; i < row.names.length ; ++i) {
-      if (StringUtils.equals(row.names[i], columnName)) {
-        return row.values[i];
-      }
-    }
-    return '';
   }
 
 }

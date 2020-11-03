@@ -23,16 +23,15 @@ contract('SimpleRowRepositoryTest', (accounts) => {
 
   it('#set', async () => {
     const key = nameGen();
-    await repository.set(key, {names: [key], values: [valueGen()]});
+    await repository.set(key, {values: [valueGen()]});
     const row = await repository.get(key);
     expect(row.available).to.eq(true);
   });
 
   it('#findBy', async () => {
     const key = nameGen();
-    await repository.set(key, {names: [key], values: [valueGen()]});
-    const rows = await repository.findBy({ name: key, dataType: 1}, { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0);
-    console.log('Rows:', rows);
+    await repository.set(key, {values: [valueGen()]});
+    const rows = await repository.findBy({ index: 0, name: key, dataType: 1}, { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0);
     expect(rows.length).to.eq(1);
   });
 

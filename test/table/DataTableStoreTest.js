@@ -29,7 +29,6 @@ contract('DataTableStoreTest', (accounts) => {
     const name = nameGen();
     await store.createTable(name, nameGen(), 1);
     const t = await store.getTable(name);
-    console.log('Table', t);
   });
 
   it('test register / deregister table', async () => {

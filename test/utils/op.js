@@ -183,8 +183,8 @@ function addIndex(index, table) {
   return table.addIndex({indexName: index.name, columnName: index.column})
     .then(() => table.getMetadata())
     .then(meta => meta.indices)
-    .then(indices => indices.map(it => ({name: it.indexName, column: it.columnName})))
-    .then(indices => expect(indices).to.deep.include(index));
+    .then(indices => indices.map(it => it.indexName))
+    .then(indexNames => expect(indexNames).to.deep.include(index.name));
 }
 
 function dropIndex(name, table) {
@@ -197,33 +197,25 @@ function dropIndex(name, table) {
 
 function addRow(row, table) {
   logger.action('Add row ' + row.values[0] + ' to ' + table.address.substring(0, 10));
-  const localMap = {};
-  [...row.names.keys()].forEach(i => localMap[row.names[i]] = row.values[i]);
   return table.getRow(row.values[0])
     .then(r => expect(r.available).to.eq(false))
     .then(() => table.add(row))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
       expect(r.available).to.eq(true);
-      const remoteMap = {};
-      [...r[0].keys()].forEach(i => remoteMap[r[0][i]] = r[1][i]);
-      expect(remoteMap).to.eql(localMap);
+      expect(r[0]).to.eql(row.values);
     });
 }
 
 function updateRow(row, table) {
   logger.action('Update row ' + row.values[0]);
-  const localMap = {};
-  [...row.names.keys()].forEach(i => localMap[row.names[i]] = row.values[i]);
   return table.getRow(row.values[0])
     .then(r => expect(r.available).to.eq(true))
     .then(() => table.update(row))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
       expect(r.available).to.eq(true);
-      const remoteMap = {};
-      [...r[0].keys()].forEach(i => remoteMap[r[0][i]] = r[1][i]);
-      expect(remoteMap).to.eql(localMap);
+      expect(r[0]).to.eql(row.values);
     });
 }
 

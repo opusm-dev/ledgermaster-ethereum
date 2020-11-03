@@ -26,7 +26,7 @@ contract('DataTableTest', (accounts) => {
 
   it('#getRow', async() => {
     const keyColumnValue = uuid();
-    await addRow(table, { names: [keyColumnName], values: [keyColumnValue] });
+    await addRow(table, { values: [keyColumnValue] });
     const row = await table.getRow(keyColumnValue);
     expect(row['available']).to.equal(true);
   });
@@ -35,7 +35,7 @@ contract('DataTableTest', (accounts) => {
     const keyColumnValue = uuid();
     await addColumn(table, {name: 'parent', type: 1});
     await addIndex(table, { name: 'idx_parent', column: 'parent' });
-    await addRow(table, { names: [keyColumnName, 'parent'], values: [keyColumnValue, ''] });
+    await addRow(table, { values: [keyColumnValue, ''] });
     const children = await table.findBy('parent', { value: keyColumnValue, boundType: 0 }, { value: keyColumnValue, boundType: 0 }, 1);
     expect(children.length).to.eq(0);
   });
@@ -43,14 +43,14 @@ contract('DataTableTest', (accounts) => {
   it('#findBy: without index', async () => {
     const keyColumnValue = uuid();
     await addColumn(table, {name: 'parent', type: 1});
-    await addRow(table, { names: [keyColumnName, 'parent'], values: [keyColumnValue, ''] });
+    await addRow(table, { values: [keyColumnValue, ''] });
     const children = await table.findBy('parent', { value: keyColumnValue, boundType: 0 }, { value: keyColumnValue, boundType: 0 }, 1);
     expect(children.length).to.eq(0);
   });
 
   it('#findBy: all row', async () => {
     const keyColumnValue = uuid();
-    await addRow(table, { names: [keyColumnName], values: [keyColumnValue] });
+    await addRow(table, { values: [keyColumnValue] });
     const children = await table.findBy(keyColumnName, { value: '', boundType: -1 }, { value: '', boundType: -1 }, 0);
     expect(children.length).to.eq(1);
   });
@@ -69,13 +69,12 @@ contract('DataTableTest', (accounts) => {
 
     const stringSorted = await table.findBy('string_column', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 1);
     for (let i = 0 ; i < stringSorted.length - 1 ; ++i) {
-      expect(stringSorted[i][1][2].localeCompare(stringSorted[i+1][1][2])).to.eq(-1);
+      expect(stringSorted[i][0][2].localeCompare(stringSorted[i+1][0][2])).to.eq(-1);
     }
-
 
     const integerSorted = await table.findBy('integer_column', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 1);
     for (let i = 0 ; i < integerSorted.length - 1 ; ++i) {
-      expect(parseInt(integerSorted[i][1][2]) < parseInt(integerSorted[i+1][1][2])).to.eq(true);
+      expect(parseInt(integerSorted[i][0][2]) < parseInt(integerSorted[i+1][0][2])).to.eq(true);
     }
   });
 
@@ -93,7 +92,7 @@ contract('DataTableTest', (accounts) => {
 
     const allColumnNames = [keyColumnName].concat(columnNames);
     const rows = Array(N_ROW).fill()
-      .map(() => ({ names: allColumnNames, values: allColumnNames.map(it => valueGen()) }));
+      .map(() => ({ values: allColumnNames.map(it => valueGen()) }));
     await addRow(table, ...rows);
 
     function testFindBy() {
@@ -121,18 +120,9 @@ contract('DataTableTest', (accounts) => {
 
       logger.action('Find ' + columnName + ' in ' + input);
 
-      function getValue(row, name) {
-        const columnIndex = row[0].indexOf(name);
-        if (columnIndex < 0) {
-          console.log('Row:', row);
-          console.log('Name:', name);
-        }
-        expect(columnIndex).to.be.at.least(0, 'Row\'s ' + name + ': ' + row.toString());
-        return row[1][columnIndex];
-      }
       return table.findBy(columnName, { value: start, boundType: startType }, { value: end, boundType: endType }, orderType)
         .then(list => {
-          const values = list.map(row => getValue(row, columnName))
+          const values = list.map(row => row[0][c])
           function stringCompare(a, b) {
             const min = Math.min(a, b);
             for (let i=0 ; i<min ; ++i) {
@@ -163,7 +153,7 @@ contract('DataTableTest', (accounts) => {
     await Promise.all(Array(N_REPEAT).fill(0).map(() => testFindBy()));
 
     const rowsToUpdate = rows.filter(() => 0 == Math.floor(Math.random() * 3))
-      .map(row => ({ names: row.names, values: row.values.map((v, i) => (0==i)?v:valueGen()) }));
+      .map(row => ({ values: row.values.map((v, i) => (0==i)?v:valueGen()) }));
 
     await updateRow(table, ...rowsToUpdate);
 
