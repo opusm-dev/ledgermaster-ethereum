@@ -191,7 +191,6 @@ contract DataTable is DataTableState, Table, Controlled {
     require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = newRow.values[0];
     TableRow memory oldRow = getRow(key);
-    require(oldRow.available, ERR_NO_DATA);
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],bool),(string[],bool))', sender, oldRow, newRow));
     require(success, ERR_UPDATE_CONSTRAINT);
     for (uint i = 0 ; i < Indices.length ; ++i) {
