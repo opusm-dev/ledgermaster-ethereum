@@ -190,6 +190,7 @@ contract DataTable is DataTableState, Table, Controlled {
     requireAuthorized(sender);
     require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = newRow.values[0];
+    /*
     TableRow memory oldRow = getRow(key);
     (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],bool),(string[],bool))', sender, oldRow, newRow));
     require(success, ERR_UPDATE_CONSTRAINT);
@@ -204,6 +205,7 @@ contract DataTable is DataTableState, Table, Controlled {
         index.add(newColumn, key);
       }
     }
+    */
     RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
   }
 
