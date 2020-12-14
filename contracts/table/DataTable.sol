@@ -207,10 +207,6 @@ contract DataTable is DataTableState, Table, Controlled {
     }
     RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
     */
-    set(key, newRow);
-  }
-
-  function set(string memory key, TableRow memory row) public {
     RowNode2 memory oldRowNode = Rows[key];
     uint index = oldRowNode.index;
     if (!oldRowNode.row.available) {
@@ -218,16 +214,13 @@ contract DataTable is DataTableState, Table, Controlled {
       Keys.push(key);
       index = Keys.length - 1;
     }
+    newRow.available = true;
     Rows[key] = RowNode2({
-    row: TableRow({
-    values: row.values,
-    available: true
-    }),
+    row: newRow,
     index: index,
     available: true
     });
   }
-
 
   function getRow(string memory key) public view override statusAvailable returns (TableRow memory) {
     return RowRepository(getModule(ROW_REPOSITORY)).get(key);
