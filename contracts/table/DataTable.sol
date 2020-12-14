@@ -205,9 +205,29 @@ contract DataTable is DataTableState, Table, Controlled {
         index.add(newColumn, key);
       }
     }
-    */
     RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
+    */
+    set(key, newRow);
   }
+
+  function set(string memory key, TableRow memory row) public {
+    RowNode2 memory oldRowNode = Rows[key];
+    uint index = oldRowNode.index;
+    if (!oldRowNode.row.available) {
+      // 존재하지 않으면
+      Keys.push(key);
+      index = Keys.length - 1;
+    }
+    Rows[key] = RowNode2({
+    row: TableRow({
+    values: row.values,
+    available: true
+    }),
+    index: index,
+    available: true
+    });
+  }
+
 
   function getRow(string memory key) public view override statusAvailable returns (TableRow memory) {
     return RowRepository(getModule(ROW_REPOSITORY)).get(key);
