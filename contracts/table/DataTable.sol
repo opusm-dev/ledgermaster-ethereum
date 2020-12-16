@@ -169,8 +169,10 @@ contract DataTable is DataTableState, Table, Controlled {
     string memory key = row.values[0];
     require(Columns.length == row.values.length, ERR_KEY_VALUE_SIZE);
     require(!getRow(key).available, ERR_ALREADY_EXIST);
-    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,(string[],bool))', sender, row));
-    require(success, ERR_INSERT_CONSTRAINT);
+    if (0 < Constraints.length) {
+      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,(string[],bool))', sender, row));
+      require(success, ERR_INSERT_CONSTRAINT);
+    }
     RowRepository(getModule(ROW_REPOSITORY)).set(key, row);
     addIndexFor(row);
   }
@@ -180,8 +182,10 @@ contract DataTable is DataTableState, Table, Controlled {
     // Check if it exists
     TableRow memory row = getRow(key);
     require(row.available, ERR_NO_DATA);
-    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,(string[],bool))', sender, row));
-    require(success, ERR_DELETE_CONSTRAINT);
+    if (0 < Constraints.length) {
+      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,(string[],bool))', sender, row));
+      require(success, ERR_DELETE_CONSTRAINT);
+    }
     removeIndexFor(row);
     RowRepository(getModule(ROW_REPOSITORY)).remove(key);
   }
@@ -191,8 +195,10 @@ contract DataTable is DataTableState, Table, Controlled {
     require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = newRow.values[0];
     TableRow memory oldRow = getRow(key);
-    (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],bool),(string[],bool))', sender, oldRow, newRow));
-    require(success, ERR_UPDATE_CONSTRAINT);
+    if (0 < Constraints.length) {
+      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],bool),(string[],bool))', sender, oldRow, newRow));
+      require(success, ERR_UPDATE_CONSTRAINT);
+    }
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       uint columnIndex = Indices[i].columnIndex;
