@@ -69,11 +69,9 @@ contract SimpleRowRepository is Controlled, RowRepository {
       Keys.push(key);
       index = Keys.length - 1;
     }
+    row.available = true;
     Rows[key] = RowNode({
-      row: TableRow({
-        values: row.values,
-        available: true
-      }),
+      row: row,
       index: index,
       available: true
     });
