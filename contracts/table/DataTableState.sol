@@ -12,11 +12,6 @@ contract DataTableState {
   int constant ST_TEMPORARY_UNAVAILABLE = 2;
 
   int public status = ST_CREATED;
-  struct RowNode2 {
-    TableRow row;
-    uint index;
-    bool available;
-  }
 
   address store;
   string name;
@@ -24,6 +19,4 @@ contract DataTableState {
   TableColumn[] public Columns;
   TableIndex[] Indices;
   string[] Keys;
-  mapping(string => RowNode2) public Rows;
-
 }
