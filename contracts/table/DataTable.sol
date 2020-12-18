@@ -43,7 +43,8 @@ contract DataTable is DataTableState, Table, Controlled {
     uint index;
     bool available;
   }
-  mapping(string => RowNode2) private Rows;
+  mapping(string => uint) private RowIndices;
+  mapping(string => string[]) private Rows;
 
 
   modifier statusAvailable {
@@ -198,8 +199,8 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function update(address sender, TableRow memory newRow) public statusAvailable {
-    requireAuthorized(sender);
-    require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
+    //requireAuthorized(sender);
+    //require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = newRow.values[0];
     if (0 < Constraints.length) {
       TableRow memory oldRow = getRow(key);
@@ -220,20 +221,13 @@ contract DataTable is DataTableState, Table, Controlled {
         }
       }
     }
-    RowNode2 memory oldRowNode = Rows[key];
-    uint index = oldRowNode.index;
-    if (!oldRowNode.row.available) {
+    string[] memory oldRowNode = Rows[key];
+    if (0 == oldRowNode.length) {
       // 존재하지 않으면
       Keys.push(key);
-      index = Keys.length - 1;
+      RowIndices[key] = Keys.length - 1;
     }
-    newRow.available = true;
-    Rows[key] = RowNode2({
-    row: newRow,
-    index: index,
-    available: true
-    });
-
+    Rows[key] = newRow.values;
     // RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
   }
 
