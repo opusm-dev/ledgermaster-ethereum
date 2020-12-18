@@ -38,6 +38,13 @@ contract DataTable is DataTableState, Table, Controlled {
   string private constant ERR_DELETE_CONSTRAINT = 'DELETE_VIOLATION';
 
   address[] Friends;
+  struct RowNode2 {
+    TableRow row;
+    uint index;
+    bool available;
+  }
+  mapping(string => RowNode2) private Rows;
+
 
   modifier statusAvailable {
     require(status == ST_AVAILABLE, ERR_ST_AVAILABLE);
@@ -210,7 +217,21 @@ contract DataTable is DataTableState, Table, Controlled {
         index.add(newColumn, key);
       }
     }
-    RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
+    RowNode2 memory oldRowNode = Rows[key];
+    uint index = oldRowNode.index;
+    if (!oldRowNode.row.available) {
+      // 존재하지 않으면
+      Keys.push(key);
+      index = Keys.length - 1;
+    }
+    newRow.available = true;
+    Rows[key] = RowNode2({
+    row: newRow,
+    index: index,
+    available: true
+    });
+
+    // RowRepository(getModule(ROW_REPOSITORY)).set(key, newRow);
   }
 
   function getRow(string memory key) public view override statusAvailable returns (TableRow memory) {
