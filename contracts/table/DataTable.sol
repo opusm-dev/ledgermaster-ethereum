@@ -201,20 +201,23 @@ contract DataTable is DataTableState, Table, Controlled {
     requireAuthorized(sender);
     require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
     string memory key = newRow.values[0];
-    TableRow memory oldRow = getRow(key);
     if (0 < Constraints.length) {
+      TableRow memory oldRow = getRow(key);
       (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,(string[],bool),(string[],bool))', sender, oldRow, newRow));
       require(success, ERR_UPDATE_CONSTRAINT);
     }
-    for (uint i = 0 ; i < Indices.length ; ++i) {
-      // For each index
-      uint columnIndex = Indices[i].columnIndex;
-      string memory oldColumn = oldRow.values[columnIndex];
-      string memory newColumn = newRow.values[columnIndex];
-      if (StringUtils.notEquals(oldColumn, newColumn)) {
-        Index index = Index(Indices[i].addrezz);
-        index.remove(oldColumn, key);
-        index.add(newColumn, key);
+    if (0 < Indices.length) {
+      TableRow memory oldRow = getRow(key);
+      for (uint i = 0 ; i < Indices.length ; ++i) {
+        // For each index
+        uint columnIndex = Indices[i].columnIndex;
+        string memory oldColumn = oldRow.values[columnIndex];
+        string memory newColumn = newRow.values[columnIndex];
+        if (StringUtils.notEquals(oldColumn, newColumn)) {
+          Index index = Index(Indices[i].addrezz);
+          index.remove(oldColumn, key);
+          index.add(newColumn, key);
+        }
       }
     }
     RowNode2 memory oldRowNode = Rows[key];
