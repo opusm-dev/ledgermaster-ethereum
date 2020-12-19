@@ -16,7 +16,6 @@ contract DataTableConstraints is DataTableState {
   /* Constraint-related governance */
   /*********************************/
   function addConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraints[i] != addrezz, ERR_ALREADY_EXIST);
     }
@@ -24,7 +23,6 @@ contract DataTableConstraints is DataTableState {
   }
 
   function removeConstraint(address addrezz) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     uint deletionCount = 0;
     uint beforeColumns = Constraints.length;
     for (uint i = 0 ; i<Constraints.length ; ++i ) {
@@ -42,19 +40,19 @@ contract DataTableConstraints is DataTableState {
     require(beforeColumns - deletionCount == Constraints.length, ERR_ILLEGAL);
   }
 
-  function checkInsert(address sender, TableRow memory row) public view {
+  function checkInsert(address sender, string[] memory row) public view {
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraint(Constraints[i]).checkInsert(sender, store, row), ERR_CONSTRAINTS);
     }
   }
 
-  function checkDelete(address sender, TableRow memory row) public view {
+  function checkDelete(address sender, string[] memory row) public view {
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraint(Constraints[i]).checkDelete(sender, store, row), ERR_CONSTRAINTS);
     }
   }
 
-  function checkUpdate(address sender, TableRow memory oldRow, TableRow memory newRow) public view {
+  function checkUpdate(address sender, string[] memory oldRow, string[] memory newRow) public view {
     for (uint i = 0 ; i < Constraints.length ; ++i) {
       require(Constraint(Constraints[i]).checkUpdate(sender, store, oldRow, newRow), ERR_CONSTRAINTS);
     }

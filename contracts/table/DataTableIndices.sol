@@ -17,7 +17,6 @@ contract DataTableIndices is DataTableState, Controlled {
   constructor(address _controller) Controlled(_controller) public { }
 
   function addIndex(string memory _name, uint _columnIndex) public {
-    require((status == ST_AVAILABLE) || (status == ST_INITIALIZING), 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     // Add index
     for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication

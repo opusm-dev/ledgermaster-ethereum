@@ -21,7 +21,6 @@ contract DataTableColumns is DataTableState, Controlled {
   /* Column-related governance */
   /*****************************/
   function addColumn(string memory _name, uint _type) public {
-    require(status == ST_AVAILABLE || status == ST_INITIALIZING, 'Status must be ST_AVAILABLE or ST_INITIALIZING');
     require(validateColumn(_name, _type), 'Column is not valid');
     for (uint i = 0 ; i<Columns.length ; ++i) {
       // Check column name duplication
