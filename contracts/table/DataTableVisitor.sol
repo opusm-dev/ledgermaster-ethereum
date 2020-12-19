@@ -1,7 +1,6 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import "./RowRepository.sol";
 import './TableColumn.sol';
 import './TableMetadata.sol';
 import './TableRow.sol';
@@ -21,17 +20,16 @@ contract DataTableVisitor is TableVisitor, Controlled {
 
   constructor(address _controller) Controlled(_controller) public { }
 
-  function findBy(Table table, uint columnIndex, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (TableRow[] memory) {
+  function findBy(Table table, uint columnIndex, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (string[][] memory) {
     TableMetadata memory meta = table.getMetadata();
     TableColumn memory column = meta.columns[columnIndex];
-    RowRepository rowRepository = RowRepository(meta.rowRepository);
     Comparator comparator = Comparator(getModule(COMPARATOR + column.dataType));
 
     // Check if it is key and equals
     if (columnIndex == 0 && ValuePointUtils.checkPoint(comparator, _start, _end)) {
       string[] memory keys = new string[](1);
       keys[0] = _start.value;
-      return rowRepository.get(keys, false);
+      return table.listRow(keys, false);
     } else {
       // Check if column have index
       for (uint i = 0 ; i < meta.indices.length ; ++i) {
@@ -39,28 +37,27 @@ contract DataTableVisitor is TableVisitor, Controlled {
           // If index exists for column
           Index index = Index(meta.indices[i].addrezz);
           if (-1 == _orderType) {
-            return rowRepository.get(index.findBy(_start, _end), true);
+            return table.listRow(index.findBy(_start, _end), true);
           } else {
-            return rowRepository.get(index.findBy(_start, _end), false);
+            return table.listRow(index.findBy(_start, _end), false);
           }
         }
       }
 
-      return rowRepository.findBy(column, _start, _end, _orderType);
+      return table.findRowsBy(column, _start, _end, _orderType);
     }
   }
 
   function countBy(Table table, uint columnIndex, ValuePoint memory _start, ValuePoint memory _end) public view override returns (uint) {
     TableMetadata memory meta = table.getMetadata();
     TableColumn memory column = meta.columns[columnIndex];
-    RowRepository rowRepository = RowRepository(meta.rowRepository);
     Comparator comparator = Comparator(getModule(COMPARATOR + column.dataType));
 
     // Check if it is key and equals
     if (_start.boundType == -1 && _end.boundType == -1) {
-      return rowRepository.size();
+      return table.size();
     } else if (columnIndex == 0 && ValuePointUtils.checkPoint(comparator, _start, _end)) {
-      if (rowRepository.get(_start.value).available) {
+      if (0 < table.getRow(_start.value).length) {
         return 1;
       } else {
         return 0;
@@ -75,7 +72,7 @@ contract DataTableVisitor is TableVisitor, Controlled {
         }
       }
 
-      return rowRepository.countBy(column, _start, _end);
+      return table.countRowsBy(column, _start, _end);
     }
   }
 }

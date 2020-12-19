@@ -9,5 +9,4 @@ struct TableMetadata {
   address location;
   TableColumn[] columns;
   TableIndex[] indices;
-  address rowRepository;
 }

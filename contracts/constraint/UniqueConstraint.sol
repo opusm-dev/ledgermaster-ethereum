@@ -20,7 +20,7 @@ contract UniqueConstraint is Constraint {
       boundType: 0
     });
     string memory uniqueColumnName = table.getMetadata().columns[uniqueColumnIndex].name;
-    TableRow[] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
+    string[][] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
     return rows.length == 0;
   }
 
@@ -35,7 +35,7 @@ contract UniqueConstraint is Constraint {
       boundType: 0
     });
     string memory uniqueColumnName = table.getMetadata().columns[uniqueColumnIndex].name;
-    TableRow[] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
+    string[][] memory rows = table.findBy(uniqueColumnName, vp, vp, 0);
     return rows.length == 0;
   }
 }

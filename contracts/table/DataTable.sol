@@ -1,7 +1,6 @@
 pragma solidity ^0.6.4;
 pragma experimental ABIEncoderV2;
 
-import './RowRepository.sol';
 import './DataTableState.sol';
 import './DataTableVisitor.sol';
 import './TableMetadata.sol';
@@ -18,6 +17,7 @@ import './TableIndex.sol';
 
 contract DataTable is DataTableState, Table, Controlled {
   /* General operations */
+  string private constant ERR_ILLEGAL = 'ILLEGAL_STATE_IN_DATA_TABLE_INDICES';
   string private constant ERR_ALREADY_INIT = 'ALREADY_INIT';
   string private constant ERR_ALREADY_EXIST = 'ALREADY_EXIST';
   string private constant ERR_NO_COLUMN = 'NO_COLUMN';
@@ -74,8 +74,7 @@ contract DataTable is DataTableState, Table, Controlled {
       name: name,
       location: address(this),
       columns: Columns,
-      indices: Indices,
-      rowRepository: getModule(ROW_REPOSITORY)
+      indices: Indices
     });
   }
 
@@ -141,7 +140,7 @@ contract DataTable is DataTableState, Table, Controlled {
   /**************************/
   /* Row-related governance */
   /**************************/
-  function add(TableRow memory row) public {
+  function add(string[] memory row) public {
     add(msg.sender, row);
   }
 
@@ -153,30 +152,30 @@ contract DataTable is DataTableState, Table, Controlled {
     update(msg.sender, newRow);
   }
 
-  function add(address sender, TableRow memory row) public {
+  function add(address sender, string[] memory values) public {
     requireAuthorized(sender);
-    string memory key = row.values[0];
-    require(Columns.length == row.values.length, ERR_KEY_VALUE_SIZE);
+    string memory key = values[0];
+    require(Columns.length == values.length, ERR_KEY_VALUE_SIZE);
     require(0 < getRow(key).length, ERR_ALREADY_EXIST);
     if (0 < Constraints.length) {
-      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,string[])', sender, row));
+      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,string[])', sender, values));
       require(success, ERR_INSERT_CONSTRAINT);
     }
-    RowRepository(getModule(ROW_REPOSITORY)).set(key, row);
-    addIndexFor(row.values);
+    setRow(key, values);
+    addIndexFor(values);
   }
 
   function remove(address sender, string memory key) public {
     requireAuthorized(sender);
     // Check if it exists
-    string[] memory row = getRow(key);
-    require(0 < row.length, ERR_NO_DATA);
+    string[] memory values = getRow(key);
+    require(0 < values.length, ERR_NO_DATA);
     if (0 < Constraints.length) {
-      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,string[])', sender, row));
+      (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkDelete(address,string[])', sender, values));
       require(success, ERR_DELETE_CONSTRAINT);
     }
-    removeIndexFor(row);
-    RowRepository(getModule(ROW_REPOSITORY)).remove(key);
+    removeIndexFor(values);
+    removeRow(key);
   }
 
   function update(address sender, string[] memory newRow) public {
@@ -212,17 +211,7 @@ contract DataTable is DataTableState, Table, Controlled {
         }
       }
     }
-    string[] memory oldRowNode = Rows[key];
-    if (0 == oldRowNode.length) {
-      // 존재하지 않으면
-      Keys.push(key);
-      RowIndices[key] = Keys.length - 1;
-    }
-    Rows[key] = newRow;
-  }
-
-  function getRow(string memory key) public view override returns (string[] memory) {
-    return Rows[key];
+    setRow(key, newRow);
   }
 
   /**
@@ -237,7 +226,7 @@ contract DataTable is DataTableState, Table, Controlled {
    */
   function findBy(string calldata _column, ValuePoint calldata _start, ValuePoint calldata _end, int _orderType)
   external view override
-  returns (TableRow[] memory) {
+  returns (string[][] memory) {
     TableVisitor visitor = TableVisitor(getModule(TABLE_VISITOR));
     return visitor.findBy(this, getColumnIndex(_column), _start, _end, _orderType);
   }
@@ -259,4 +248,146 @@ contract DataTable is DataTableState, Table, Controlled {
     require(false, ERR_NO_COLUMN);
     return 0;
   }
+
+  function getRow(string memory key) public view override returns (string[] memory) {
+    return Rows[key];
+  }
+
+  function listRow(string[] memory keys, bool reverse) public view override returns (string[][] memory) {
+    string[][] memory rows = new string[][](keys.length);
+    if (reverse) {
+      for (uint i = 0 ; i < keys.length ; ++i) {
+        rows[i] = Rows[keys[keys.length - i - 1]];
+        require(0 < rows[i].length, ERR_ILLEGAL);
+      }
+    } else {
+      for (uint i = 0 ; i < keys.length ; ++i) {
+        rows[i] = Rows[keys[i]];
+        require(0 < rows[i].length, ERR_ILLEGAL);
+      }
+    }
+    return rows;
+  }
+
+  function setRow(string memory key, string[] memory row) public {
+    string[] memory oldRowNode = Rows[key];
+    if (0 == oldRowNode.length) {
+      // 존재하지 않으면
+      Keys.push(key);
+      RowIndices[key] = Keys.length - 1;
+    }
+    Rows[key] = row;
+  }
+  function removeRow(string memory key) public {
+    string[] memory values = Rows[key];
+    if (0 < values.length) {
+      uint index = RowIndices[key];
+      delete Rows[key];
+      delete RowIndices[key];
+      if (Keys.length-1 != index) {
+        string memory lastKey = Keys[Keys.length-1];
+        Keys[index] = lastKey;
+        RowIndices[lastKey] = index;
+      }
+      Keys.pop();
+    }
+  }
+
+  function size() public view override returns (uint) {
+    return Keys.length;
+  }
+
+  function findRowsBy(TableColumn memory _column, ValuePoint memory _start, ValuePoint memory _end, int _orderType) public view override returns (string[][] memory) {
+    string[][] memory _list = listRow(Keys, false);
+    string[][] memory filteredRows = filter(_list, _column, _start, _end);
+    if (0 != _orderType) {
+      string[][] memory ascendingSorted = sort(filteredRows, _column, 0, filteredRows.length);
+      if (-1 == _orderType) {
+        return reverse(filteredRows);
+      }
+      return ascendingSorted;
+    } else {
+      return filteredRows;
+    }
+  }
+  function countRowsBy(TableColumn memory _column, ValuePoint memory _start, ValuePoint memory _end) public view override returns (uint) {
+    string[][] memory _list = listRow(Keys, false);
+    uint n = 0;
+    Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
+    for (uint i = 0 ; i<_list.length ; ++i) {
+      string memory value = _list[i][_column.index];
+      if (ValuePointUtils.checkBound(comparator, _start, _end, value)) {
+        ++n;
+      }
+    }
+    return n;
+  }
+
+  function filter(string[][] memory _list, TableColumn memory _column, ValuePoint memory _start, ValuePoint memory _end) private view returns (string[][] memory) {
+    uint n = 0;
+    bool[] memory accepts = new bool[](_list.length);
+    Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
+    for (uint i = 0 ; i<_list.length ; ++i) {
+      string memory value = _list[i][_column.index];
+      if (ValuePointUtils.checkBound(comparator, _start, _end, value)) {
+        accepts[i] = true;
+        ++n;
+      } else {
+        accepts[i] = false;
+      }
+    }
+    string[][] memory filtered = new string[][](n);
+    uint targetIndex = 0;
+    for (uint sourceIndex = 0 ; sourceIndex < _list.length ; ++sourceIndex) {
+      if (accepts[sourceIndex]) {
+        filtered[targetIndex++] = _list[sourceIndex];
+      }
+    }
+    return filtered;
+  }
+
+  /**
+ * 3 way quick sort
+ */
+  function sort(string[][] memory _list, TableColumn memory _column, uint _start, uint _end) private view returns (string[][] memory) {
+    if (_end - _start < 2) {
+      return _list;
+    }
+    uint bandStart = _start;
+    uint bandEnd = _start;
+    uint i = _start + 1;
+    string memory bandValue = _list[bandStart][_column.index];
+
+    Comparator comparator = Comparator(getModule(COMPARATOR + _column.dataType));
+    string[] memory temp;
+    while (i < _end) {
+      string memory v = _list[i][_column.index];
+      int comparison = comparator.compare(bandValue, v);
+      if (0 == comparison) {
+        ++bandEnd;
+      } else if (comparison > 0) {
+        temp = _list[bandStart];
+        _list[bandStart] = _list[i];
+        _list[i] = _list[bandEnd+1];
+        _list[bandEnd+1] = temp;
+        ++bandStart;
+        ++bandEnd;
+      }
+      ++i;
+    }
+    return sort(sort(_list, _column, _start, bandStart), _column, bandEnd + 1, _end);
+  }
+
+  function reverse(string[][] memory _list) private pure returns (string[][] memory) {
+    uint middlePoint = _list.length / 2;
+    string[] memory temp;
+    for (uint i = 0 ; i < middlePoint ; ++i) {
+      temp = _list[i];
+      _list[i] = _list[_list.length - i - 1];
+      _list[_list.length - i - 1] = temp;
+    }
+    return _list;
+  }
+
+
 }
