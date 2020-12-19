@@ -113,15 +113,15 @@ contract DataTable is DataTableState, Table, Controlled {
   /**
    * Status 확인은 public에서 미리 확인하도록 함
    */
-  function addIndexFor(TableRow memory row) private {
+  function addIndexFor(string[] memory row) private {
     // Row key
-    string memory key = row.values[0];
+    string memory key = row[0];
     // iterate indices
     for (uint i = 0 ; i < Indices.length ; ++i) {
       // For each index
       uint columnIndex = Indices[i].columnIndex;
       Index index = Index(Indices[i].addrezz);
-      index.add(row.values[columnIndex], key);
+      index.add(row[columnIndex], key);
     }
   }
   /**
@@ -149,7 +149,7 @@ contract DataTable is DataTableState, Table, Controlled {
     remove(msg.sender, key);
   }
 
-  function update(TableRow memory newRow) public {
+  function update(string[] memory newRow) public {
     update(msg.sender, newRow);
   }
 
@@ -163,7 +163,7 @@ contract DataTable is DataTableState, Table, Controlled {
       require(success, ERR_INSERT_CONSTRAINT);
     }
     RowRepository(getModule(ROW_REPOSITORY)).set(key, row);
-    addIndexFor(row);
+    addIndexFor(row.values);
   }
 
   function remove(address sender, string memory key) public {
@@ -179,10 +179,10 @@ contract DataTable is DataTableState, Table, Controlled {
     RowRepository(getModule(ROW_REPOSITORY)).remove(key);
   }
 
-  function update(address sender, TableRow memory newRow) public {
-    require(Columns.length == newRow.values.length, ERR_KEY_VALUE_SIZE);
+  function update(address sender, string[] memory newRow) public {
+    require(Columns.length == newRow.length, ERR_KEY_VALUE_SIZE);
     requireAuthorized(sender);
-    string memory key = newRow.values[0];
+    string memory key = newRow[0];
     if (0 < Constraints.length) {
       string[] memory oldRow = getRow(key);
       (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,string[],string[])', sender, oldRow, newRow));
@@ -195,7 +195,7 @@ contract DataTable is DataTableState, Table, Controlled {
           // For each index
           uint columnIndex = Indices[i].columnIndex;
           string memory oldColumn = oldRow[columnIndex];
-          string memory newColumn = newRow.values[columnIndex];
+          string memory newColumn = newRow[columnIndex];
           if (StringUtils.notEquals(oldColumn, newColumn)) {
             Index index = Index(Indices[i].addrezz);
             index.remove(oldColumn, key);
@@ -207,7 +207,7 @@ contract DataTable is DataTableState, Table, Controlled {
           // For each index
           Index index = Index(Indices[i].addrezz);
           uint columnIndex = Indices[i].columnIndex;
-          string memory newColumn = newRow.values[columnIndex];
+          string memory newColumn = newRow[columnIndex];
           index.add(newColumn, key);
         }
       }
@@ -218,7 +218,7 @@ contract DataTable is DataTableState, Table, Controlled {
       Keys.push(key);
       RowIndices[key] = Keys.length - 1;
     }
-    Rows[key] = newRow.values;
+    Rows[key] = newRow;
   }
 
   function getRow(string memory key) public view override returns (string[] memory) {
