@@ -165,7 +165,9 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function remove(address sender, string memory key) public {
-    requireAuthorized(sender);
+    if (msg.sender != sender) {
+      requireAuthorized(sender);
+    }
     // Check if it exists
     string[] memory values = getRow(key);
     require(0 < values.length, ERR_NO_DATA);
