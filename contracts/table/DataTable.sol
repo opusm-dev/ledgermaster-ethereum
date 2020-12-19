@@ -153,7 +153,6 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function add(address sender, string[] memory values) public {
-    requireAuthorized(sender);
     string memory key = values[0];
     require(Columns.length == values.length, ERR_KEY_VALUE_SIZE);
     require(0 < getRow(key).length, ERR_ALREADY_EXIST);
@@ -179,16 +178,17 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function update(address sender, string[] memory newRow) public {
+    if (msg.sender != sender) {
+      requireAuthorized(sender);
+    }
     require(Columns.length == newRow.length, ERR_KEY_VALUE_SIZE);
-    requireAuthorized(sender);
-    string memory key = newRow[0];
     if (0 < Constraints.length) {
-      string[] memory oldRow = getRow(key);
+      string[] memory oldRow = getRow(newRow[0]);
       (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,string[],string[])', sender, oldRow, newRow));
       require(success, ERR_UPDATE_CONSTRAINT);
     }
     if (0 < Indices.length) {
-      string[] memory oldRow = getRow(key);
+      string[] memory oldRow = getRow(newRow[0]);
       if (0 < oldRow.length) {
         for (uint i = 0 ; i < Indices.length ; ++i) {
           // For each index
@@ -197,8 +197,8 @@ contract DataTable is DataTableState, Table, Controlled {
           string memory newColumn = newRow[columnIndex];
           if (StringUtils.notEquals(oldColumn, newColumn)) {
             Index index = Index(Indices[i].addrezz);
-            index.remove(oldColumn, key);
-            index.add(newColumn, key);
+            index.remove(oldColumn, newRow[0]);
+            index.add(newColumn, newRow[0]);
           }
         }
       } else {
@@ -207,11 +207,11 @@ contract DataTable is DataTableState, Table, Controlled {
           Index index = Index(Indices[i].addrezz);
           uint columnIndex = Indices[i].columnIndex;
           string memory newColumn = newRow[columnIndex];
-          index.add(newColumn, key);
+          index.add(newColumn, newRow[0]);
         }
       }
     }
-    setRow(key, newRow);
+    setRow(newRow[0], newRow);
   }
 
   /**
@@ -269,7 +269,7 @@ contract DataTable is DataTableState, Table, Controlled {
     return rows;
   }
 
-  function setRow(string memory key, string[] memory row) public {
+  function setRow(string memory key, string[] memory row) private {
     string[] memory oldRowNode = Rows[key];
     if (0 == oldRowNode.length) {
       // 존재하지 않으면
