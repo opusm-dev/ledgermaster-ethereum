@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 contract Modules {
   /* Common */
-  uint internal constant COMPARATOR = 1000;
+  uint internal constant COMPARATOR = 1001;
   uint internal constant STRING_COMPARATOR = 1001;
   uint internal constant INTEGER_COMPARATOR = 1002;
 
