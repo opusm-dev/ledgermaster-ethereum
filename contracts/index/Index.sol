@@ -1,7 +1,7 @@
 pragma solidity ^0.6.4;
+pragma experimental ABIEncoderV2;
 
 import "../common/ValuePoint.sol";
-pragma experimental ABIEncoderV2;
 
 interface Index {
   function add(string calldata _key, string calldata _value) external;
