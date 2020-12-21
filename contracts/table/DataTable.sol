@@ -167,7 +167,9 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function update(address sender, string[] memory newRow) public {
-    require(Columns.length == newRow.length, ERR_KEY_VALUE_SIZE);
+    if (Columns.length != newRow.length) {
+      throw ;
+    }
     if (0 < Constraints.length) {
       string[] memory oldRow = getRow(newRow[0]);
       (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkUpdate(address,string[],string[])', sender, oldRow, newRow));
