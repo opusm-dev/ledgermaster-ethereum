@@ -43,16 +43,6 @@ contract DataTable is DataTableState, Table, Controlled {
 
   constructor(address _controller) Controlled(_controller) public { }
 
-  function requireAuthorized(address sender) private view {
-    if (msg.sender != sender) {
-      bool isFriend = false;
-      for (uint i = 0 ; i<Friends.length ; ++i) {
-        isFriend = isFriend || Friends[i] == msg.sender;
-      }
-      require(isFriend, ERR_UNAUTHORIZED);
-    }
-  }
-
   function initialize(address _store, string memory _name, string memory _keyColumnName, uint _keyColumnType) public override {
     store = _store;
     name = _name;
@@ -165,9 +155,6 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function remove(address sender, string memory key) public {
-    if (msg.sender != sender) {
-      requireAuthorized(sender);
-    }
     // Check if it exists
     string[] memory values = getRow(key);
     require(0 < values.length, ERR_NO_DATA);
@@ -180,9 +167,6 @@ contract DataTable is DataTableState, Table, Controlled {
   }
 
   function update(address sender, string[] memory newRow) public {
-    if (msg.sender != sender) {
-      requireAuthorized(sender);
-    }
     require(Columns.length == newRow.length, ERR_KEY_VALUE_SIZE);
     if (0 < Constraints.length) {
       string[] memory oldRow = getRow(newRow[0]);
