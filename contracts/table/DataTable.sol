@@ -95,8 +95,8 @@ contract DataTable is DataTableState, Table, Controlled {
   /****************************/
   /* Index-related governance */
   /****************************/
-  function addIndex(IndexInput memory index) public {
-    (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('addIndex(string,uint256)', index.indexName, getColumnIndex(index.columnName)));
+  function addIndex(string memory indexName, uint indexType, string memory columnName) public {
+    (bool success,) = getModule(PART_INDICES).delegatecall(abi.encodeWithSignature('addIndex(string,uint256,uint256)', indexName, indexType, getColumnIndex(columnName)));
     require(success, 'fail to add a index');
   }
   /**

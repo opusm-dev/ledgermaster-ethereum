@@ -14,11 +14,6 @@ interface Table {
     uint dataType;
   }
 
-  struct IndexInput {
-    string indexName;
-    string columnName;
-  }
-
   function initialize(address store, string calldata _name, string calldata _keyColumnName, uint _keyColumnType) external;
   function size() external view returns (uint);
   function getStore() external returns (address);

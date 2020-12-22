@@ -17,8 +17,8 @@ contract DataTableIndices is DataTableState, Controlled {
 
   constructor(address _controller) Controlled(_controller) public { }
 
-  function addIndex(string memory _name, uint type, uint _columnIndex) public {
-    require(0 == type || 1 == type, ERR_ILLEGAL_TYPE);
+  function addIndex(string memory _name, uint _type, uint _columnIndex) public {
+    require(0 == _type || 1 == _type, ERR_ILLEGAL_TYPE);
     // Add index
     for (uint i = 0 ; i<Indices.length ; ++i) {
       // Check index name duplication
@@ -26,8 +26,8 @@ contract DataTableIndices is DataTableState, Controlled {
       // Check column duplication
       require(Indices[i].columnIndex != _columnIndex, ERR_INDEXED_COLUMN);
     }
-    address indexAddress = createModule(HASH_INDEX_FACTORY + type);
-    if (0 == type) {
+    address indexAddress = createModule(HASH_INDEX_FACTORY + _type);
+    if (0 == _type) {
       // Hash Index
     } else {
       // Sort Index
