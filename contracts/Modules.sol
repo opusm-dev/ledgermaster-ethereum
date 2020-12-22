@@ -11,7 +11,6 @@ contract Modules {
   uint internal constant TABLE_FACTORY = 100;
 
   /* In table */
-  uint internal constant INDEX_FACTORY = 200;
   uint internal constant NODE_REPOSITORY_FACTORY = 201;
   uint internal constant ROW_REPOSITORY = 202;
   uint internal constant ROW_REPOSITORY_FACTORY = 203;

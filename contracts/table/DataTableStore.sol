@@ -35,7 +35,8 @@ contract DataTableStore is Controlled {
 
     tableController.setModule(NODE_REPOSITORY_FACTORY, controller.getModule(NODE_REPOSITORY_FACTORY));
     tableController.setModule(TABLE_FACTORY, controller.getModule(TABLE_FACTORY));
-    tableController.setModule(INDEX_FACTORY, controller.getModule(INDEX_FACTORY));
+    tableController.setModule(HASH_INDEX_FACTORY, controller.getModule(HASH_INDEX_FACTORY));
+    tableController.setModule(SORT_INDEX_FACTORY, controller.getModule(SORT_INDEX_FACTORY));
 
     address tableAddress = tableController.createModule(address(tableController), TABLE_FACTORY);
     Table table = Table(tableAddress);

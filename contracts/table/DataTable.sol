@@ -145,7 +145,7 @@ contract DataTable is DataTableState, Table, Controlled {
   function add(address sender, string[] memory values) public {
     string memory key = values[0];
     require(Columns.length == values.length, ERR_KEY_VALUE_SIZE);
-    require(0 < getRow(key).length, ERR_ALREADY_EXIST);
+    require(0 == getRow(key).length, ERR_ALREADY_EXIST);
     if (0 < Constraints.length) {
       (bool success,) = getModule(PART_CONSTRAINTS).delegatecall(abi.encodeWithSignature('checkInsert(address,string[])', sender, values));
       require(success, ERR_INSERT_CONSTRAINT);
