@@ -13,24 +13,20 @@ contract HashIndex is Index {
   function add(string memory key, string memory value) public override {
     require(StringUtils.isNotEmpty(key), ERR_EMPTY_KEY);
     string memory oldKey = value2key[value];
-    if (StringUtils.isEmpty(oldKey)) {
-      // insert
-      value2key[value] = key;
-      key2count[key]++;
-    } else {
+    if (StringUtils.isNotEmpty(oldKey)) {
       // update
-      value2key[value] = key;
-      key2count[oldKey]++;
-      key2count[key]++;
+      key2count[oldKey]--;
     }
+    value2key[value] = key;
+    key2count[key]++;
   }
 
   function remove(string memory key, string memory value) public override {
-    require(0 == bytes(key).length);
+    require(StringUtils.isNotEmpty(key), ERR_EMPTY_KEY);
     string memory oldKey = value2key[value];
-    if (0 < bytes(oldKey).length) {
+    if (StringUtils.isNotEmpty(oldKey)) {
       delete value2key[value];
-      key2count[key]--;
+      key2count[oldKey]--;
     }
   }
 
