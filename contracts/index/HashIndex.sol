@@ -6,20 +6,21 @@ import '../common/ValuePoint.sol';
 import './Index.sol';
 
 contract HashIndex is Index {
+  string private constant ERR_EMPTY_KEY = 'EMPTY_KEY';
   mapping (string => string) value2key;
   mapping (string => uint) key2count;
 
   function add(string memory key, string memory value) public override {
-    require(0 == bytes(key).length);
+    require(StringUtils.isNotEmpty(key), ERR_EMPTY_KEY);
     string memory oldKey = value2key[value];
-    if (0 < bytes(oldKey).length) {
+    if (StringUtils.isEmpty(oldKey)) {
+      // insert
+      value2key[value] = key;
+      key2count[key]++;
+    } else {
       // update
       value2key[value] = key;
       key2count[oldKey]++;
-      key2count[key]++;
-    } else {
-      // insert
-      value2key[value] = key;
       key2count[key]++;
     }
   }
