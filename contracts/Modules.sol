@@ -15,6 +15,8 @@ contract Modules {
   uint internal constant NODE_REPOSITORY_FACTORY = 201;
   uint internal constant ROW_REPOSITORY = 202;
   uint internal constant ROW_REPOSITORY_FACTORY = 203;
+  uint internal constant HASH_INDEX_FACTORY = 204;
+  uint internal constant SORT_INDEX_FACTORY = 205;
   uint internal constant PART_CONSTRAINTS = 230;
   uint internal constant PART_COLUMNS = 231;
   uint internal constant PART_INDICES = 232;
@@ -27,5 +29,4 @@ contract Modules {
   uint internal constant VISITOR = 320;
   uint internal constant TABLE_VISITOR = 321;
   uint internal constant MANAGER = 330;
-
 }
