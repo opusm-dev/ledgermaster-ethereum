@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 contract Modules {
   /* Common */
-  uint internal constant COMPARATOR = 1001;
+  uint internal constant COMPARATOR = 1000;
   uint internal constant STRING_COMPARATOR = 1001;
   uint internal constant INTEGER_COMPARATOR = 1002;
 
@@ -12,8 +12,6 @@ contract Modules {
 
   /* In table */
   uint internal constant NODE_REPOSITORY_FACTORY = 201;
-  uint internal constant ROW_REPOSITORY = 202;
-  uint internal constant ROW_REPOSITORY_FACTORY = 203;
   uint internal constant HASH_INDEX_FACTORY = 204;
   uint internal constant SORT_INDEX_FACTORY = 205;
   uint internal constant PART_CONSTRAINTS = 230;

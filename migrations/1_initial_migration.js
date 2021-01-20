@@ -13,9 +13,9 @@ const DataTableColumns = artifacts.require('DataTableColumns');
 const DataTableIndices = artifacts.require('DataTableIndices');
 const DataTableConstraints = artifacts.require('DataTableConstraints');
 
-const SimpleRowRepositoryFactory = artifacts.require('SimpleRowRepositoryFactory');
 const SimpleNodeRepositoryFactory = artifacts.require('SimpleNodeRepositoryFactory');
-const IndexFactory = artifacts.require('IndexFactory');
+const HashIndexFactory = artifacts.require('HashIndexFactory');
+const SortIndexFactory = artifacts.require('IndexFactory');
 const DataTableFactory = artifacts.require('DataTableFactory');
 const modules = require('../test/utils/modules.js');
 
@@ -40,7 +40,7 @@ module.exports = async function(deployer) {
   await deployer.deploy(DataTableVisitor, ModuleController.address).then(it => controller.setModule(modules.TABLE_VISITOR, it.address));
   await deployer.deploy(AvlTreeManager, ModuleController.address).then(it => controller.setModule(modules.MANAGER, it.address));
   await deployer.deploy(SimpleNodeRepositoryFactory, ModuleController.address).then(it => controller.setModule(modules.NODE_REPOSITORY_FACTORY, it.address));
-  await deployer.deploy(SimpleRowRepositoryFactory, ModuleController.address).then(it => controller.setModule(modules.ROW_REPOSITORY_FACTORY, it.address));
-  await deployer.deploy(IndexFactory, ModuleController.address).then(it => controller.setModule(modules.INDEX_FACTORY, it.address));
+  await deployer.deploy(HashIndexFactory, ModuleController.address).then(it => controller.setModule(modules.HASH_INDEX_FACTORY, it.address));
+  await deployer.deploy(SortIndexFactory, ModuleController.address).then(it => controller.setModule(modules.SORT_INDEX_FACTORY, it.address));
   await deployer.deploy(DataTableFactory, ModuleController.address).then(it => controller.setModule(modules.TABLE_FACTORY, it.address));
 };

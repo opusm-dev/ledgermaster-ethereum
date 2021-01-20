@@ -28,7 +28,7 @@ contract('DataTableTest', (accounts) => {
     const keyColumnValue = uuid();
     await addRow(table, { values: [keyColumnValue] });
     const row = await table.getRow(keyColumnValue);
-    expect(row['available']).to.equal(true);
+    expect(row).to.not.have.lengthOf(0);
   });
 
   it('#findBy: with index', async () => {
@@ -69,12 +69,12 @@ contract('DataTableTest', (accounts) => {
 
     const stringSorted = await table.findBy('string_column', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 1);
     for (let i = 0 ; i < stringSorted.length - 1 ; ++i) {
-      expect(stringSorted[i][0][2].localeCompare(stringSorted[i+1][0][2])).to.eq(-1);
+      expect(stringSorted[i][2].localeCompare(stringSorted[i+1][2])).to.eq(-1);
     }
 
     const integerSorted = await table.findBy('integer_column', { value: '', boundType: -1 }, { value: '', boundType: -1 }, 1);
     for (let i = 0 ; i < integerSorted.length - 1 ; ++i) {
-      expect(parseInt(integerSorted[i][0][2]) < parseInt(integerSorted[i+1][0][2])).to.eq(true);
+      expect(parseInt(integerSorted[i][2]) < parseInt(integerSorted[i+1][2])).to.eq(true);
     }
   });
 
@@ -122,7 +122,7 @@ contract('DataTableTest', (accounts) => {
 
       return table.findBy(columnName, { value: start, boundType: startType }, { value: end, boundType: endType }, orderType)
         .then(list => {
-          const values = list.map(row => row[0][c])
+          const values = list.map(row => row[c])
           function stringCompare(a, b) {
             const min = Math.min(a, b);
             for (let i=0 ; i<min ; ++i) {

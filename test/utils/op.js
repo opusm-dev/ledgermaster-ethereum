@@ -18,13 +18,13 @@ const DataTableIndices = artifacts.require('DataTableIndices');
 const DataTableConstraints = artifacts.require('DataTableConstraints');
 
 const SimpleNodeRepositoryFactory = artifacts.require('SimpleNodeRepositoryFactory');
-const IndexFactory = artifacts.require('IndexFactory');
+const HashIndexFactory = artifacts.require('HashIndexFactory');
+const SortIndexFactory = artifacts.require('IndexFactory');
 const DataTableFactory = artifacts.require('DataTableFactory');
 
 const DataTableStore = artifacts.require('DataTableStore');
 const DataTable = artifacts.require('DataTable');
 const SimpleNodeRepository = artifacts.require('SimpleNodeRepository');
-const SimpleRowRepository = artifacts.require('SimpleRowRepository');
 const AvlTree = artifacts.require('AvlTree');
 
 async function configureController(controller) {
@@ -35,7 +35,8 @@ async function configureController(controller) {
   await controller.setModule(modules.NODE_FINDER, (await NodeFinder.deployed()).address);
   await controller.setModule(modules.NODE_REPOSITORY_FACTORY, (await SimpleNodeRepositoryFactory.deployed()).address);
 
-  await controller.setModule(modules.INDEX_FACTORY, (await IndexFactory.deployed()).address);
+  await controller.setModule(modules.HASH_INDEX_FACTORY, (await HashIndexFactory.deployed()).address);
+  await controller.setModule(modules.SORT_INDEX_FACTORY, (await SortIndexFactory.deployed()).address);
   await controller.setModule(modules.BALANCER, (await AvlTreeBalancer.deployed()).address);
   await controller.setModule(modules.VISITOR, (await AvlTreeVisitor.deployed()).address);
   await controller.setModule(modules.TABLE_VISITOR, (await DataTableVisitor.deployed()).address);
@@ -56,7 +57,7 @@ async function createStore() {
 
 async function createTree(account, dataType) {
   const controller = await globalController();
-  const indexFactory = await getIndexFactory();
+  const indexFactory = await getSortIndexFactory();
   const tx = await indexFactory.create(controller.address, account);
   const log = tx.receipt.logs.filter(log => log.event == 'NewIndex')[0];
   const tree = await AvlTree.at(log.args['addrezz']);
@@ -77,17 +78,10 @@ async function createController() {
   return controller;
 }
 
-async function createRowRepository() {
-  const controller = await globalController();
-  return await SimpleRowRepository.new(controller.address);
-}
-
 async function createTable(store, tableName, keyColumnName) {
   const type = 1;
   const controller = await globalController();
   const table = await DataTable.new(controller.address);
-  const rowRepository = await createRowRepository();
-  await controller.setModule(modules.ROW_REPOSITORY, rowRepository.address);
   const storeAddress = (null == store)?'0x0000000000000000000000000000000000000000':(store.address);
   await table.initialize(storeAddress, tableName, keyColumnName, 1);
   const metadata = await table.getMetadata();
@@ -97,8 +91,8 @@ async function createTable(store, tableName, keyColumnName) {
 }
 
 
-async function getIndexFactory() {
-  return IndexFactory.at(await globalController().then(it => it.getModule(modules.INDEX_FACTORY)));
+async function getSortIndexFactory() {
+  return SortIndexFactory.at(await globalController().then(it => it.getModule(modules.SORT_INDEX_FACTORY)));
 }
 async function getStringComparator() {
   return StringComparator.at(await globalController().then(it => it.getModule(modules.STRING_COMPARATOR)));
@@ -180,7 +174,7 @@ function dropColumn(name, table) {
 
 function addIndex(index, table) {
   logger.action('Add an index ' + index.name + '[' + index.column + '] from ' + table.address.substring(0, 10));
-  return table.addIndex({indexName: index.name, columnName: index.column})
+  return table.addIndex(index.name, 1, index.column)
     .then(() => table.getMetadata())
     .then(meta => meta.indices)
     .then(indices => indices.map(it => it.indexName))
@@ -198,34 +192,34 @@ function dropIndex(name, table) {
 function addRow(row, table) {
   logger.action('Add row ' + row.values[0] + ' to ' + table.address.substring(0, 10));
   return table.getRow(row.values[0])
-    .then(r => expect(r.available).to.eq(false))
-    .then(() => table.add(row))
+    .then(r => expect(r).to.have.lengthOf(0))
+    .then(() => table.add(row.values))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
-      expect(r.available).to.eq(true);
-      expect(r[0]).to.eql(row.values);
+      expect(r).to.have.lengthOf(row.values.length);
+      expect(r).to.eql(row.values);
     });
 }
 
 function updateRow(row, table) {
   logger.action('Update row ' + row.values[0]);
   return table.getRow(row.values[0])
-    .then(r => expect(r.available).to.eq(true))
-    .then(() => table.update(row))
+    .then(r => expect(r).to.not.have.lengthOf(0))
+    .then(() => table.update(row.values))
     .then(() => table.getRow(row.values[0]))
     .then(r => {
-      expect(r.available).to.eq(true);
-      expect(r[0]).to.eql(row.values);
+      expect(r).to.not.have.lengthOf(0);
+      expect(r).to.eql(row.values);
     });
 }
 
 function removeRow(key, table) {
   logger.action('Remove row ' + key + ' from ' + table.address.substring(0, 10));
   return table.getRow(key)
-    .then(r => expect(r.available).to.eq(true))
+    .then(r => expect(r).to.not.have.lengthOf(0))
     .then(() => table.remove(key))
     .then(() => table.getRow(key))
-    .then(r => expect(r.available).to.eq(false));
+    .then(r => expect(r).to.have.lengthOf(0));
 }
 
 function callRecursively() {
@@ -311,12 +305,11 @@ module.exports = {
   globalController,
   getNodeFinder,
   getStringComparator,
-  getIndexFactory: getIndexFactory,
+  getSortIndexFactory: getSortIndexFactory,
   createController,
   createStore,
   createTable,
   createTree,
-  createRowRepository,
   checkPath: function(finder, comparator, target, repository) {
     return finder.find(repository, comparator.address, target.toString())
       .then((it) => it.map(n => n.key));

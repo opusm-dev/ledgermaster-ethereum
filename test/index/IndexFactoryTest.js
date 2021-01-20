@@ -1,12 +1,12 @@
 const { v4: uuid } = require('uuid');
-const { createController, getIndexFactory } = require('../utils/op.js');
+const { createController, getSortIndexFactory } = require('../utils/op.js');
 
 const N_NODE = 8;
 
 contract('IndexFactoryTest', (accounts) => {
   let indexFactory;
   beforeEach('', async () => {
-    indexFactory = await getIndexFactory();
+    indexFactory = await getSortIndexFactory();
   });
   it('create', async () => {
     const key = uuid();
